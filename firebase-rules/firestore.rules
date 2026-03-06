@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    function isManager() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role == "manager";
+    }
+
+    match /staff/{uid} {
+      allow read: if signedIn() && (uid == request.auth.uid || isManager());
+      allow write: if isManager();
+    }
+
+    match /tasks/{taskId} {
+      allow read: if signedIn();
+      allow create, update, delete: if isManager();
+    }
+
+    match /submissions/{subId} {
+      allow read: if signedIn() &&
+        (resource.data.staffUid == request.auth.uid || isManager());
+      allow create: if signedIn() &&
+        request.resource.data.staffUid == request.auth.uid;
+      allow update, delete: if isManager();
+    }
+  }
+}
