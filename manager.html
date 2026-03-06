@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="th">
+<head>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="assets/favicon.svg" />
+
+<title>Manager | Laya Staff Task</title>
+</head>
+<body onload="loadManagerPage()">
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <div class="title">Manager Console</div>
+        <div class="subtitle">ตรวจงาน / แจกงาน / รายงาน</div>
+      </div>
+      <div class="pills">
+        <span class="pill">Manager: <b id="mgrName">-</b></span>
+        <span class="pill">Dept: <b id="mgrDept">-</b></span>
+        <button class="secondary" onclick="window.location.href='staff.html'">Staff</button>
+        <button class="secondary" onclick="doLogout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="grid four">
+      <div class="kpi"><div class="num" id="kpiTotal">0</div><div class="lbl">Today submissions</div></div>
+      <div class="kpi"><div class="num" id="kpiWaiting">0</div><div class="lbl">Waiting</div></div>
+      <div class="kpi"><div class="num" id="kpiApproved">0</div><div class="lbl">Approved</div></div>
+      <div class="kpi"><div class="num" id="kpiRejected">0</div><div class="lbl">Rejected</div></div>
+      <div class="kpi"><div class="num" id="kpiNotSubmitted">0</div><div class="lbl">Not submitted</div></div>
+      <div class="kpi"><div class="num">7</div><div class="lbl">Retention (days)</div></div>
+      <div class="kpi"><div class="num">PIN</div><div class="lbl">Delete protected</div></div>
+      <div class="kpi"><div class="num">v3</div><div class="lbl">Report + Auto</div></div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <div class="row">
+        <div>
+          <label>Filter date</label>
+          <input id="filterDate" type="date" />
+        </div>
+        <div class="actions" style="align-self:flex-end;">
+          <button class="secondary" id="filterBtn">Refresh</button>
+          <button class="secondary" id="reportBtn">Report not submitted</button>
+          <button class="danger" id="cleanupBtn">Cleanup &gt; 7 days (manual)</button>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+      <h3 style="margin:0 0 10px 0;">Daily Submissions</h3>
+      <div class="small">Approve/Reject ได้เลย และลบด้วย PIN ผู้จัดการ</div>
+      <table class="table" style="margin-top:10px;">
+        <thead>
+          <tr>
+            <th>Photo</th>
+            <th>Staff</th>
+            <th>Task</th>
+            <th>Dept</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Actions</th>
+            <th class="small">photoPath</th>
+          </tr>
+        </thead>
+        <tbody id="subRows"></tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3 style="margin:0 0 10px 0;">Report: Who hasn't submitted?</h3>
+      <div class="small">นิยาม: “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” แต่ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก</div>
+      <table class="table" style="margin-top:10px;">
+        <thead>
+          <tr>
+            <th>Staff ID</th>
+            <th>Name</th>
+            <th>Position</th>
+            <th>Department</th>
+            <th>Submitted</th>
+            <th>Missing</th>
+          </tr>
+        </thead>
+        <tbody id="reportRows"></tbody>
+      </table>
+      <div class="hint">ถ้าต้องการให้เป็น “ยังไม่ส่งเลยแม้แต่งานเดียว” บอกฉันได้ เดี๋ยวปรับนิยามให้</div>
+    </div>
+
+    <div class="grid two" style="margin-top:14px;">
+      <div class="card">
+        <h3 style="margin:0 0 10px 0;">Create Staff Account</h3>
+        <div class="small">สร้างบัญชีพนักงาน (Email/Password) + โปรไฟล์ใน Firestore</div>
+
+        <label>Staff ID</label>
+        <input id="newStaffID" placeholder="เช่น AROON01" />
+
+        <label>Password</label>
+        <input id="newStaffPassword" type="password" placeholder="กำหนดรหัสให้พนักงาน" />
+
+        <label>Name</label>
+        <input id="newStaffName" placeholder="ชื่อพนักงาน" />
+
+        <div class="grid two">
+          <div>
+            <label>Position</label>
+            <input id="newStaffPosition" placeholder="Waiter / Bartender / HK" />
+          </div>
+          <div>
+            <label>Department</label>
+            <input id="newStaffDepartment" placeholder="Mangrove / The Taste / HK" />
+          </div>
+        </div>
+
+        <label>Role</label>
+        <select id="newStaffRole">
+          <option value="staff">staff</option>
+          <option value="manager">manager</option>
+        </select>
+
+        <div class="actions" style="margin-top:10px;">
+          <button id="createStaffBtn" class="success">Create Staff</button>
+        </div>
+
+        <div class="hint">หมายเหตุ: การสร้างผู้ใช้จากหน้าเว็บเป็น prototype — ถ้าต้องการปลอดภัยมากขึ้น ทำผ่าน Admin/Cloud Functions</div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 10px 0;">Create Task (Side Job)</h3>
+        <div class="small">กำหนดงานให้ “ทุกคน / แผนก / คนเดียว”</div>
+
+        <label>Task title</label>
+        <input id="taskTitle" placeholder="เช่น Clean Coffee Machine" />
+
+        <label>Description</label>
+        <textarea id="taskDescription" placeholder="รายละเอียด/มาตรฐานงานที่ต้องการให้เห็นในรูป"></textarea>
+
+        <div class="grid two">
+          <div>
+            <label>Department</label>
+            <input id="taskDept" placeholder="Mangrove / The Taste / HK" />
+          </div>
+          <div>
+            <label>Priority</label>
+            <select id="taskPriority">
+              <option value="Normal">Normal</option>
+              <option value="High">High</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+        </div>
+
+        <label>Assign mode</label>
+        <select id="assignMode">
+          <option value="all">All staff</option>
+          <option value="department">Department</option>
+          <option value="staffid">Specific StaffID</option>
+        </select>
+
+        <div id="assignedToWrap" style="display:none;">
+          <label>Assigned to (Staff ID)</label>
+          <input id="assignedTo" placeholder="เช่น AROON01" />
+        </div>
+
+        <div class="actions" style="margin-top:10px;">
+          <button id="createTaskBtn">Create Task</button>
+        </div>
+
+        <div class="hint">Assign mode = Department จะใช้กับพนักงานที่มี department ตรงกันใน profile</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3 style="margin:0 0 10px 0;">Task List</h3>
+      <div class="small">เปิด/ปิดงาน, แก้ไข, ลบ (ต้องใช้ PIN)</div>
+      <table class="table" style="margin-top:10px;">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Dept</th>
+            <th>Priority</th>
+            <th>AssignedTo</th>
+            <th>Active</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="taskRows"></tbody>
+      </table>
+    </div>
+
+    <div class="footer">Laya Staff Task — Manager Console (v3).</div>
+  </div>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/manager.js"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="th">
+<head>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="assets/favicon.svg" />
+
+<title>Login | Laya Staff Task</title>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <div class="title">Laya Staff Task</div>
+        <div class="subtitle">Staff & Manager Portal (Hotel-style)</div>
+      </div>
+      <div class="pills">
+        <span class="pill">GitHub Pages</span>
+        <span class="pill">Firebase Auth</span>
+        <span class="pill">Firestore + Storage</span>
+        <span class="pill">v3</span>
+      </div>
+    </div>
+
+    <div class="grid two">
+      <div class="card">
+        <h2 style="margin:0 0 6px 0;">Login</h2>
+        <div class="small">เข้าสู่ระบบด้วย <b>Staff ID</b> และ <b>Password</b></div>
+
+        <label>Staff ID</label>
+        <input id="staffID" placeholder="เช่น MGR01 / AROON01 / HK12" />
+
+        <label>Password</label>
+        <input id="password" type="password" placeholder="••••••••" />
+
+        <div class="actions" style="margin-top:12px;">
+          <button onclick="doLogin()">Login</button>
+        </div>
+
+        <div class="hr"></div>
+        <div class="notice">
+          <b>ก่อนใช้งานครั้งแรก</b>
+          <div class="small" style="margin-top:6px;">
+            1) ใส่ Firebase config ใน <code>js/firebase-config.js</code><br/>
+            2) Firebase Console → Auth → Authorized domains → เพิ่มโดเมน GitHub Pages ของหน่อย
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 8px 0;">เพิ่มใหม่ใน v3</h3>
+        <div class="small">
+          ✅ รายงาน “ใครยังไม่ส่งงานวันนี้” (ตามงานที่ถูกมอบหมาย)<br/>
+          ✅ Auto delete 7 วันแบบอัตโนมัติจริง (Firebase Cloud Functions + Scheduler)<br/>
+        </div>
+        <div class="hr"></div>
+        <div class="small">
+          Tip: ระบบ login ใช้รูปแบบ <code>StaffID@laya.local</code> (แก้ domain ได้ใน config)
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Prototype v3 — Report + Auto cleanup via Cloud Functions.</div>
+  </div>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="th">
+<head>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="assets/favicon.svg" />
+
+<title>Submit Work | Laya Staff Task</title>
+</head>
+<body onload="loadUploadPage()">
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <div class="title">Submit Daily Work</div>
+        <div class="subtitle">อัปโหลดรูปยืนยันงาน</div>
+      </div>
+      <div class="pills">
+        <button class="secondary" id="backBtn">Back</button>
+        <button class="secondary" onclick="doLogout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="grid two">
+      <div class="card">
+        <h3 style="margin:0 0 8px 0;">Task</h3>
+        <div><b id="taskTitle">-</b></div>
+        <div class="small" id="taskDesc"></div>
+        <div class="hr"></div>
+        <div class="small">Date: <b id="todayLabel">-</b></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 8px 0;">Upload Photo</h3>
+        <div class="small">ถ่ายจากมือถือ หรือเลือกไฟล์จากเครื่องได้</div>
+        <label>เลือกไฟล์รูป</label>
+        <input type="file" id="photo" accept="image/*" />
+        <div class="actions" style="margin-top:10px;">
+          <button id="submitBtn" onclick="submitWork()">Submit</button>
+        </div>
+        <div class="hint">แนะนำ: ถ่ายให้เห็นงานชัด ๆ เพื่อให้ Manager ตรวจได้ง่าย</div>
+      </div>
+    </div>
+  </div>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/upload.js"></script>
+</body>
+</html>

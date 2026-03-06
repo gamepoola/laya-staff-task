@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="th">
+<head>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="assets/favicon.svg" />
+
+<title>Staff Dashboard | Laya Staff Task</title>
+</head>
+<body onload="loadStaffPage()">
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <div class="title">Staff Dashboard</div>
+        <div class="subtitle">งานประจำวัน / Side Job</div>
+      </div>
+      <div class="pills">
+        <button class="secondary" onclick="window.location.href='manager.html'">Manager</button>
+        <button class="secondary" onclick="doLogout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="grid three">
+      <div class="card">
+        <h3 style="margin:0 0 8px 0;">Profile</h3>
+        <div class="small">Staff ID: <b id="staffCode">-</b></div>
+        <div class="small">Name: <b id="staffName">-</b></div>
+        <div class="small">Position: <b id="staffPosition">-</b></div>
+        <div class="small">Department: <b id="staffDepartment">-</b></div>
+        <div class="hr"></div>
+        <div class="small">Today: <b id="todayLabel">-</b></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 8px 0;">วิธีใช้งาน</h3>
+        <div class="small">
+          1) ดูรายการงานวันนี้<br/>
+          2) กด <b>ส่งงาน</b> → ถ่าย/อัปโหลดรูป<br/>
+          3) รอ Manager ตรวจงานวันต่อวัน
+        </div>
+        <div class="hr"></div>
+        <div class="hint">
+          หากไม่เห็นงาน: ให้ Manager เพิ่มงานใน collection <code>tasks</code> และมี profile ใน <code>staff</code>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin:0 0 8px 0;">สถานะงาน</h3>
+        <div class="small">
+          <span class="badge waiting">waiting</span>
+          <span class="badge approved">approved</span>
+          <span class="badge rejected">rejected</span>
+        </div>
+        <div class="hr"></div>
+        <div class="small">ส่งได้วันละ 1 ครั้ง/งาน (ระบบกันส่งซ้ำ)</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3 style="margin:0 0 10px 0;">Today's Tasks</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Task</th>
+            <th>Department</th>
+            <th>Priority</th>
+            <th>Action</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="taskRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/staff.js"></script>
+</body>
+</html>
