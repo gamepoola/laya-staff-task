@@ -5,20 +5,49 @@ service cloud.firestore {
     function signedIn() { return request.auth != null; }
 
     function isManager() {
-      return signedIn() &&
-        get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role == "manager";
+      return signedIn()
+        && exists(/databases/$(database)/documents/staff/$(request.auth.uid))
+        && get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role == "manager";
+    }
+
+    // Staff directory imported from Excel (keyed by StaffID)
+    match /staff_directory/{staffId} {
+      // staff can read directory after login (needed for first-time setup)
+      allow read: if signedIn();
+      // only manager can import/update staff directory
+      allow create, update, delete: if isManager();
+    }
+
+    function dirDoc(staffID) {
+      return get(/databases/$(database)/documents/staff_directory/$(staffID));
+    }
+
+    function validSelfProfile() {
+      // create staff/{uid} from directory
+      return request.resource.data.staffID is string
+        && exists(/databases/$(database)/documents/staff_directory/$(request.resource.data.staffID))
+        && dirDoc(request.resource.data.staffID).data.active == true
+        && request.resource.data.role == dirDoc(request.resource.data.staffID).data.role
+        && request.resource.data.name == dirDoc(request.resource.data.staffID).data.name
+        && request.resource.data.position == dirDoc(request.resource.data.staffID).data.position
+        && request.resource.data.department == dirDoc(request.resource.data.staffID).data.department
+        && request.resource.data.points == 0;
     }
 
     match /staff/{uid} {
       allow read: if signedIn() && (uid == request.auth.uid || isManager());
-      allow write: if isManager();
+
+      // manager maintains profiles
+      allow create, update, delete: if isManager();
+
+      // first-time self bootstrap (create own profile once)
+      allow create: if signedIn() && uid == request.auth.uid && validSelfProfile();
     }
 
     match /tasks/{taskId} {
       allow read: if signedIn();
       allow create, update, delete: if isManager();
     }
-
 
     match /manager_checklists/{docId} {
       allow read, write: if isManager();
@@ -27,8 +56,10 @@ service cloud.firestore {
     match /submissions/{subId} {
       allow read: if signedIn() &&
         (resource.data.staffUid == request.auth.uid || isManager());
+
       allow create: if signedIn() &&
         request.resource.data.staffUid == request.auth.uid;
+
       allow update, delete: if isManager();
     }
   }

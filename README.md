@@ -191,3 +191,24 @@ Deploy:
   2) K.Noi
   3) K.Parawee
   4) K.Joy
+
+
+---
+
+## ✅ Staff list from Excel + First-time password setup
+ระบบรองรับ “รายชื่อพนักงานจาก Excel” และ “ตั้งรหัสผ่านครั้งแรก” แบบนี้:
+
+1) Manager เข้า `manager.html` → ส่วน **Import Staff from Excel**  
+   อัปโหลดไฟล์ xlsx (คอลัมน์แนะนำ: NAME, Nick Name, ID, Position, Role/Level)
+
+2) ระบบจะบันทึกรายชื่อไว้ที่ Firestore collection: `staff_directory/{StaffID}`  
+   และกำหนด role = `staff` / `manager` ตามคอลัมน์ Role (Staff/Manager)
+
+3) พนักงาน Login ครั้งแรก:
+   - ใส่ Staff ID + Password ที่ต้องการ
+   - ถ้ายังไม่มีบัญชี ระบบจะ “สร้างบัญชี” และ “บันทึกรหัสผ่าน” ให้คนนั้นทันที (First-time setup)
+
+4) Login ครั้งต่อไป:
+   - ใช้ Staff ID + Password เดิม
+
+⚠️ ต้องอัปเดต Firestore Rules ให้ตรงกับไฟล์ `firebase-rules/firestore.rules` (มี rule สำหรับ `staff_directory` และการสร้างโปรไฟล์ครั้งแรก)
