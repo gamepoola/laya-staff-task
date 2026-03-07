@@ -9,6 +9,7 @@ async function loadStaffPage(){
   el("staffName").textContent = profile?.name || "-";
   el("staffPosition").textContent = profile?.position || "-";
   el("staffDepartment").textContent = profile?.department || "-";
+  if (el("staffPoints")) el("staffPoints").textContent = String(profile?.points ?? 0);
   el("staffCode").textContent = profile?.staffID || "-";
   el("todayLabel").textContent = todayStr();
 

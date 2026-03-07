@@ -21,10 +21,12 @@ async function loadManagerPage(){
   el("createTaskBtn").onclick = createTask;
   el("assignMode").onchange = onAssignModeChange;
   el("reportBtn").onclick = loadNotSubmittedReport;
+  if (el("refreshPointsBtn")) el("refreshPointsBtn").onclick = loadStaffPoints;
 
   await loadSubmissions();
   await loadTaskList();
   await loadNotSubmittedReport();
+  await loadStaffPoints();
 }
 
 async function loadKpi(date){
@@ -105,14 +107,34 @@ async function loadSubmissions(){
 async function setStatus(id, status){
   try{
     const user = await requireAuth();
-    await db().collection("submissions").doc(id).update({
-      status,
-      reviewerUid: user.uid,
-      reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+    const subRef = db().collection("submissions").doc(id);
+
+    await db().runTransaction(async (tx) => {
+      const snap = await tx.get(subRef);
+      if (!snap.exists) throw new Error("Submission not found");
+
+      const data = snap.data() || {};
+      const alreadyAwarded = !!data.pointsAwarded;
+      const staffUid = data.staffUid;
+
+      tx.update(subRef, {
+        status,
+        reviewerUid: user.uid,
+        reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      // Award 1 point only once per submission, when status becomes 'approved'
+      if (status === "approved" && staffUid && !alreadyAwarded) {
+        const staffRef = db().collection("staff").doc(staffUid);
+        tx.set(staffRef, { points: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+        tx.update(subRef, { pointsAwarded: true });
+      }
     });
+
     toast("อัปเดตสถานะแล้ว ✅");
     await loadSubmissions();
     await loadNotSubmittedReport();
+    await loadStaffPoints();
   }catch(e){
     console.error(e);
     toast("อัปเดตไม่สำเร็จ: " + (e?.message||e), "danger");
@@ -380,6 +402,7 @@ async function toggleTask(id, to){
   toast("อัปเดตงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
+  await loadStaffPoints();
 }
 
 async function editTask(id){
@@ -394,6 +417,7 @@ async function editTask(id){
   toast("แก้ไขงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
+  await loadStaffPoints();
 }
 
 async function deleteTask(id){
@@ -405,6 +429,7 @@ async function deleteTask(id){
   toast("ลบงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
+  await loadStaffPoints();
 }
 
 function onAssignModeChange(){
@@ -442,6 +467,7 @@ async function createStaff(){
     await db().collection("staff").doc(uid).set({
       staffID, name, position, department,
       role: role || "staff",
+      points: 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -460,5 +486,56 @@ async function createStaff(){
     toast("สร้างบัญชีไม่สำเร็จ: " + (e?.message||e), "danger");
   }finally{
     try{ await secAuth.signOut(); }catch(_){}
+  }
+}
+
+
+// =====================
+// Staff Points
+// =====================
+async function loadStaffPoints(){
+  const body = el("pointsRows");
+  if(!body) return;
+
+  body.innerHTML = "<tr><td colspan='5' class='small'>กำลังโหลดคะแนน...</td></tr>";
+
+  try{
+    const snap = await db().collection("staff").limit(500).get();
+    const rows = [];
+    snap.forEach(doc => {
+      const s = doc.data() || {};
+      if ((s.role || "staff") === "manager") return;
+      rows.push({
+        staffID: s.staffID || "",
+        name: s.name || "",
+        position: s.position || "-",
+        department: s.department || "-",
+        points: Number(s.points || 0)
+      });
+    });
+
+    rows.sort((a,b)=> (b.points - a.points) || a.staffID.localeCompare(b.staffID));
+
+    if(rows.length === 0){
+      body.innerHTML = "<tr><td colspan='5' class='small'>ยังไม่มีข้อมูลพนักงาน</td></tr>";
+      return;
+    }
+
+    body.innerHTML = "";
+    for(const r of rows){
+      body.insertAdjacentHTML("beforeend", `
+        <tr>
+          <td><b>${escapeHtml(r.staffID)}</b></td>
+          <td>${escapeHtml(r.name)}</td>
+          <td>${escapeHtml(r.position)}</td>
+          <td>${escapeHtml(r.department)}</td>
+          <td><b>${r.points}</b></td>
+        </tr>
+      `);
+    }
+  }catch(e){
+    console.error(e);
+    body.innerHTML = "<tr><td colspan='5' class='small'>โหลดคะแนนไม่สำเร็จ</td></tr>";
+    toast("โหลดคะแนนไม่สำเร็จ: " + (e?.message||e), "danger");
   }
 }

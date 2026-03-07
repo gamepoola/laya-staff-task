@@ -87,7 +87,33 @@
       <div class="hint">ถ้าต้องการให้เป็น “ยังไม่ส่งเลยแม้แต่งานเดียว” บอกฉันได้ เดี๋ยวปรับนิยามให้</div>
     </div>
 
-    <div class="grid two" style="margin-top:14px;">
+    
+    <div class="card" style="margin-top:14px;">
+      <div class="row" style="align-items:flex-end;">
+        <div>
+          <h3 style="margin:0 0 6px 0;">Staff Points</h3>
+          <div class="small">คะแนนสะสมจะเพิ่ม +1 เมื่อ Manager กด Approve (ให้คะแนนครั้งเดียวต่อ submission)</div>
+        </div>
+        <div class="actions" style="flex:0;">
+          <button class="secondary" id="refreshPointsBtn">Refresh Points</button>
+        </div>
+      </div>
+      <table class="table" style="margin-top:10px;">
+        <thead>
+          <tr>
+            <th>Staff ID</th>
+            <th>Name</th>
+            <th>Position</th>
+            <th>Department</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody id="pointsRows"></tbody>
+      </table>
+      <div class="hint">Tip: คะแนนถูกเก็บใน Firestore ที่ <code>staff/{uid}.points</code></div>
+    </div>
+
+<div class="grid two" style="margin-top:14px;">
       <div class="card">
         <h3 style="margin:0 0 10px 0;">Create Staff Account</h3>
         <div class="small">สร้างบัญชีพนักงาน (Email/Password) + โปรไฟล์ใน Firestore</div>
