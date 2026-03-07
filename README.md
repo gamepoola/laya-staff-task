@@ -91,3 +91,16 @@
 
 ถ้า login ไม่ผ่านบน GitHub Pages:
 Firebase Console → Authentication → Settings → Authorized domains → เพิ่ม `YOURNAME.github.io`
+
+
+## ✅ Login case-insensitive
+Staff ID จะถูกแปลงเป็นตัวพิมพ์เล็กอัตโนมัติ (เช่น MGR01 → mgr01@laya.local) เพื่อลดปัญหา login ไม่ผ่านจากตัวพิมพ์ใหญ่/เล็ก
+
+---
+
+## ✅ Manager Console: Create Task troubleshooting
+เวอร์ชันนี้เพิ่ม error message ตอนกด Create Task (ถ้า Firestore Rules ไม่อนุญาต จะขึ้นสาเหตุ เช่น `Missing or insufficient permissions`)
+
+ถ้าขึ้น permissions:
+1) ตรวจ Firestore Rules ให้เป็นแบบที่ให้ไว้ (manager role = "manager")
+2) ตรวจ `staff/{UID}` ของ manager ต้องใช้ **Document ID = UID** และมี field `role: "manager"`

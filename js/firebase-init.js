@@ -49,7 +49,7 @@ function toast(msg, kind="info"){
 
 function staffIdToEmail(staffID){
   const dom = window.__STAFF_EMAIL_DOMAIN__ || "laya.local";
-  const s = String(staffID || "").trim();
+  const s = String(staffID || "").trim().toLowerCase();
   if (!s) return "";
   if (s.includes("@")) return s;
   return `${s}@${dom}`;

@@ -273,30 +273,51 @@ async function createTask(){
   const assignedToInput = el("assignedTo").value.trim();
 
   if(!title){
-    toast("กรุณาใส่ชื่องาน", "danger"); return;
+    toast("กรุณาใส่ชื่องาน", "danger"); 
+    return;
+  }
+
+  // Warn about department exact-match behavior
+  if(mode === "department" && !department){
+    toast("Assign mode = Department ต้องระบุ Department ให้ตรงกับในโปรไฟล์พนักงาน", "danger");
+    return;
   }
 
   let assignedTo = "all";
   if(mode==="all") assignedTo = "all";
   if(mode==="department") assignedTo = "department";
-  if(mode==="staffid") assignedTo = assignedToInput;
+  if(mode==="staffid") {
+    if(!assignedToInput){
+      toast("Assign mode = Specific StaffID ต้องใส่ Staff ID", "danger");
+      return;
+    }
+    assignedTo = assignedToInput;
+  }
 
-  const docRef = await db().collection("tasks").add({
-    title, description, department, priority,
-    assignedTo,
-    active: true,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
+  try{
+    // If Firestore rules deny, we will show the real error instead of silently failing.
+    const docRef = await db().collection("tasks").add({
+      title, description, department, priority,
+      assignedTo,
+      active: true,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-  toast("สร้างงานแล้ว ✅");
-  el("taskTitle").value="";
-  el("taskDescription").value="";
-  el("taskDept").value="";
-  el("assignedTo").value="";
+    el("taskTitle").value="";
+    el("taskDescription").value="";
+    el("taskDept").value="";
+    el("assignedTo").value="";
 
-  await normalizeTaskAssignment(docRef.id);
-  await loadTaskList();
-  await loadNotSubmittedReport();
+    await normalizeTaskAssignment(docRef.id);
+    toast("สร้างงานแล้ว ✅");
+    await loadTaskList();
+    await loadNotSubmittedReport();
+  }catch(e){
+    console.error(e);
+    const msg = (e && e.message) ? e.message : String(e);
+    // Most common: Missing or insufficient permissions
+    toast("สร้างงานไม่สำเร็จ: " + msg, "danger");
+  }
 }
 
 async function normalizeTaskAssignment(taskId){
