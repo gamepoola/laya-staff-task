@@ -85,7 +85,7 @@ const CHECKLIST_TEMPLATES = {
   "The Mangrove|Afternoon|v1": { outlet: "The Mangrove", shift: "Afternoon", version: 1, sections: BASE_SECTIONS_V1 }
 };
 
-function templateKey(outlet, shift)(outlet, shift){ return `${outlet}|${shift}|v1`; }
+function templateKey(outlet, shift){ return `${outlet}|${shift}|v1`; }
 
 function checklistDocId(outlet, dateStr, shift){
   const o = String(outlet || "").replaceAll(/\s+/g, "_");
