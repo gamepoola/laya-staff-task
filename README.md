@@ -158,3 +158,10 @@ Deploy:
 
 ถ้ายังขึ้น error หลังอัปไฟล์:
 - ให้ทำ Hard refresh (Ctrl+F5) หรือเปิดหน้าเว็บแบบ Incognito เพื่อเคลียร์ cache
+
+
+---
+
+## ✅ Hide approved from Daily Submissions
+หลัง Manager กด **Approve** รายการนั้นจะถูกซ่อนออกจากตาราง Daily Submissions อัตโนมัติ (ค่าเริ่มต้น)
+ถ้าต้องการดูรายการที่ Approve แล้ว ให้ติ๊ก `Show approved` ในหน้า Manager Console

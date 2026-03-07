@@ -12,6 +12,12 @@ async function loadManagerPage(){
   el("mgrDept").textContent = profile?.department || "-";
 
   el("filterDate").value = todayStr();
+  if (el("showApprovedChk")) {
+    el("showApprovedChk").checked = false; // default: hide approved
+    el("showApprovedChk").addEventListener("change", async () => {
+      await loadSubmissions();
+    });
+  }
   el("filterBtn").onclick = async ()=>{
     await loadSubmissions();
     await loadNotSubmittedReport();
@@ -74,9 +80,15 @@ async function loadSubmissions(){
     taskMap.set(tid, t.exists ? (t.data().title || tid) : tid);
   }));
 
+  const showApproved = !!(el("showApprovedChk") && el("showApprovedChk").checked);
+
   body.innerHTML = "";
   snap.forEach(doc=>{
     const s = doc.data();
+    const st = (s.status || "waiting");
+    if (!showApproved && st === "approved") {
+      return; // hide approved rows
+    }
     const thumb = s.photoURL
       ? `<a href="${s.photoURL}" target="_blank"><img class="thumb" src="${s.photoURL}" alt="photo"/></a>`
       : "-";
@@ -100,6 +112,9 @@ async function loadSubmissions(){
     `);
   });
 
+  if (!body.innerHTML.trim()) {
+    body.innerHTML = "<tr><td colspan='7' class='small'>✅ วันนี้ไม่มีรายการที่ต้องตรวจ (อาจถูก Approve แล้วทั้งหมด) — ถ้าต้องการดู ให้ติ๊ก 'Show approved'</td></tr>";
+  }
   await loadKpi(date);
 }
 
@@ -215,6 +230,10 @@ async function cleanupOld(){
     let n=0;
     for(const doc of snap.docs){
       const s = doc.data();
+    const st = (s.status || "waiting");
+    if (!showApproved && st === "approved") {
+      return; // hide approved rows
+    }
       if(s.photoPath){
         try{ await storage().ref().child(s.photoPath).delete(); }catch(_){}
       }
@@ -295,6 +314,8 @@ async function loadNotSubmittedReport(){
     body.innerHTML = "<tr><td colspan='6' class='small'>✅ ทุกคนส่งงานครบ (ตามงานที่ได้รับมอบหมาย) สำหรับวันที่เลือก</td></tr>";
     return;
   }
+
+  const showApproved = !!(el("showApprovedChk") && el("showApprovedChk").checked);
 
   body.innerHTML = "";
   for(const r of rows){
@@ -399,6 +420,8 @@ async function loadTaskList(){
     body.innerHTML = "<tr><td colspan='6' class='small'>ยังไม่มีงาน</td></tr>";
     return;
   }
+
+  const showApproved = !!(el("showApprovedChk") && el("showApprovedChk").checked);
 
   body.innerHTML = "";
   snap.forEach(doc=>{
@@ -547,7 +570,9 @@ async function loadStaffPoints(){
       return;
     }
 
-    body.innerHTML = "";
+    const showApproved = !!(el("showApprovedChk") && el("showApprovedChk").checked);
+
+  body.innerHTML = "";
     for(const r of rows){
       body.insertAdjacentHTML("beforeend", `
         <tr>
