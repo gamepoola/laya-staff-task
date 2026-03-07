@@ -180,3 +180,14 @@ Deploy:
 
 ⚠️ ต้องอัปเดต Firestore Rules ใน Firebase Console ให้ Manager เขียน collection นี้ได้
 ดูตัวอย่างใน `firebase-rules/firestore.rules`
+
+---
+
+## ✅ Checklist update: Shift + Outlet + Action By dropdown
+- เพิ่ม Shift: Morning / Afternoon
+- เพิ่ม Outlet: The Taste / The Mangrove
+- ช่อง Action By เปลี่ยนเป็นแบบเลือกได้ (dropdown):
+  1) K.Too
+  2) K.Noi
+  3) K.Parawee
+  4) K.Joy
