@@ -1,12 +1,12 @@
-// ✅ Firebase config (Project: laya-staff-task)
+// ✅ Firebase config (Project: laya-staff-task-us)
 window.__FIREBASE_CONFIG__ = {
-  apiKey: "AIzaSyApG-5lDcGLeyYLSj0HQUWBiWMb61ruhJk",
-  authDomain: "laya-staff-task.firebaseapp.com",
-  projectId: "laya-staff-task",
-  storageBucket: "laya-staff-task.firebasestorage.app",
-  messagingSenderId: "247353931810",
-  appId: "1:247353931810:web:92a3b4cf95ac2ac831327b",
-  measurementId: "G-VQK3CJ8GND"
+  apiKey: "AIzaSyA9vGJU4E8MDeQjj9Ei73KZRhMTG61iAEc",
+  authDomain: "laya-staff-task-us.firebaseapp.com",
+  projectId: "laya-staff-task-us",
+  storageBucket: "laya-staff-task-us.firebasestorage.app",
+  messagingSenderId: "720667229826",
+  appId: "1:720667229826:web:d8cde53f43ed21d737be9b",
+  measurementId: "G-ZHV4RW61DX"
 };
 
 // ระบบนี้จะ login ด้วย Email/Password โดย "แปลง StaffID เป็นอีเมล" เช่น  AROON01@laya.local

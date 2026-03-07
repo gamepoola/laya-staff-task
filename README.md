@@ -81,3 +81,13 @@
 - ใช้งานกับมือถือได้ลื่นขึ้น
 
 หมายเหตุ iPhone: ถ้าเป็นไฟล์ HEIC/HEIF แล้วมีปัญหา ให้ตั้ง Camera → Formats → **Most Compatible (JPEG)**
+
+---
+
+## ✅ Firebase Config Updated
+โปรเจคนี้ถูกตั้งค่าให้ใช้ Firebase โปรเจค: **laya-staff-task-us**
+- authDomain: laya-staff-task-us.firebaseapp.com
+- storageBucket: laya-staff-task-us.firebasestorage.app
+
+ถ้า login ไม่ผ่านบน GitHub Pages:
+Firebase Console → Authentication → Settings → Authorized domains → เพิ่ม `YOURNAME.github.io`
