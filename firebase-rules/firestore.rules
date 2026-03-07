@@ -19,6 +19,11 @@ service cloud.firestore {
       allow create, update, delete: if isManager();
     }
 
+
+    match /manager_checklists/{docId} {
+      allow read, write: if isManager();
+    }
+
     match /submissions/{subId} {
       allow read: if signedIn() &&
         (resource.data.staffUid == request.auth.uid || isManager());

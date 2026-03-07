@@ -27,6 +27,7 @@ async function loadManagerPage(){
   el("createTaskBtn").onclick = createTask;
   el("assignMode").onchange = onAssignModeChange;
   el("reportBtn").onclick = loadNotSubmittedReport;
+  if (el("checklistBtn")) el("checklistBtn").onclick = () => window.location.href = "checklist.html";
   if (el("refreshPointsBtn")) el("refreshPointsBtn").onclick = loadStaffPoints;
 
   await loadSubmissions();

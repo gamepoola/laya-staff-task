@@ -165,3 +165,18 @@ Deploy:
 ## ✅ Hide approved from Daily Submissions
 หลัง Manager กด **Approve** รายการนั้นจะถูกซ่อนออกจากตาราง Daily Submissions อัตโนมัติ (ค่าเริ่มต้น)
 ถ้าต้องการดูรายการที่ Approve แล้ว ให้ติ๊ก `Show approved` ในหน้า Manager Console
+
+---
+
+## ✅ Checklist Report (Manager daily) — The Taste
+เพิ่มหน้า `checklist.html` สำหรับ Manager ใช้เช็กงานรายวันตามแบบฟอร์มในไฟล์ PDF “Daily Checklist Restaurant (The Taste)”
+
+วิธีเข้า:
+- หน้า Manager Console → ปุ่ม **Checklist report**
+
+การบันทึก:
+- Firestore collection: `manager_checklists`
+- Document ID: `{Outlet}_{YYYY-MM-DD}_{Shift}` เช่น `The_Taste_2026-03-08_Morning`
+
+⚠️ ต้องอัปเดต Firestore Rules ใน Firebase Console ให้ Manager เขียน collection นี้ได้
+ดูตัวอย่างใน `firebase-rules/firestore.rules`
