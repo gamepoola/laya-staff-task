@@ -119,7 +119,7 @@ async function setStatus(id, status){
 
       const shouldAward = (status === "approved" && staffUid && !alreadyAwarded);
 
-      // Compute points by task priority (default Normal=1)
+      // Points by task priority: Normal=1, High=2, Critical=3
       let pointsToAdd = 0;
       if (shouldAward) {
         pointsToAdd = 1;
