@@ -1,11 +1,12 @@
-// ✅ ใส่ Firebase config ของคุณ (Firebase Console → Project settings → Your apps → Web app config)
+// ✅ Firebase config (Project: laya-staff-task)
 window.__FIREBASE_CONFIG__ = {
-  apiKey: "PASTE_HERE",
-  authDomain: "PASTE_HERE",
-  projectId: "PASTE_HERE",
-  storageBucket: "PASTE_HERE",
-  messagingSenderId: "PASTE_HERE",
-  appId: "PASTE_HERE"
+  apiKey: "AIzaSyApG-5lDcGLeyYLSj0HQUWBiWMb61ruhJk",
+  authDomain: "laya-staff-task.firebaseapp.com",
+  projectId: "laya-staff-task",
+  storageBucket: "laya-staff-task.firebasestorage.app",
+  messagingSenderId: "247353931810",
+  appId: "1:247353931810:web:92a3b4cf95ac2ac831327b",
+  measurementId: "G-VQK3CJ8GND"
 };
 
 // ระบบนี้จะ login ด้วย Email/Password โดย "แปลง StaffID เป็นอีเมล" เช่น  AROON01@laya.local

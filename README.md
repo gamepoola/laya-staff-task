@@ -55,3 +55,29 @@
 - staff/{uid}: staffID, name, position, department, role
 - tasks/{taskId}: title, description, department, priority, assignedTo, active
 - submissions/{subId}: staffUid, staffID, staffName, taskId, date, photoURL, photoPath, status
+
+---
+
+## ✅ Config already filled
+ไฟล์ `js/firebase-config.js` ถูกใส่ config ของโปรเจค `laya-staff-task` แล้ว
+
+> ถ้า Storage อัปโหลดไม่ได้ ให้ตรวจใน Firebase Console → Project settings ว่า storageBucket เป็นค่าอะไร (บางโปรเจคจะเป็น `xxxx.appspot.com`)
+
+## ✅ Rules files included
+มีไฟล์ rules สำหรับ copy ไปวางที่ Firebase Console:
+- `firebase-rules/firestore.rules`
+- `firebase-rules/storage.rules`
+
+⚠️ Firestore Rules ที่ตอนนี้เป็น `allow read, write: if false;` จะทำให้เว็บใช้งานไม่ได้ ต้องเปลี่ยนเป็น rules ที่ให้ในไฟล์ด้านบน
+
+---
+
+## ✅ Image compression enabled (target ~2MB)
+ระบบจะบีบอัดรูปก่อนอัปโหลดอัตโนมัติ (จำกัดด้านยาวสุด 1600px และพยายามทำให้ไฟล์ ~2MB)
+
+ช่วยให้:
+- อัปโหลดเร็วขึ้น
+- ประหยัดค่าใช้จ่าย Storage/Download
+- ใช้งานกับมือถือได้ลื่นขึ้น
+
+หมายเหตุ iPhone: ถ้าเป็นไฟล์ HEIC/HEIF แล้วมีปัญหา ให้ตั้ง Camera → Formats → **Most Compatible (JPEG)**
