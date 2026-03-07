@@ -123,11 +123,26 @@ async function setStatus(id, status){
         reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
 
-      // Award 1 point only once per submission, when status becomes 'approved'
+      // Award points only once per submission, when status becomes 'approved'
+      // Points by priority: Normal=1, High=2, Critical=3
       if (status === "approved" && staffUid && !alreadyAwarded) {
+        let pointsToAdd = 1;
+
+        if (data.taskId) {
+          const taskRef = db().collection("tasks").doc(String(data.taskId));
+          const taskSnap = await tx.get(taskRef);
+          if (taskSnap.exists) {
+            const t = taskSnap.data() || {};
+            const p = String(t.priority || "Normal").toLowerCase();
+            if (p === "high") pointsToAdd = 2;
+            else if (p === "critical") pointsToAdd = 3;
+            else pointsToAdd = 1;
+          }
+        }
+
         const staffRef = db().collection("staff").doc(staffUid);
-        tx.set(staffRef, { points: firebase.firestore.FieldValue.increment(1) }, { merge: true });
-        tx.update(subRef, { pointsAwarded: true });
+        tx.set(staffRef, { points: firebase.firestore.FieldValue.increment(pointsToAdd) }, { merge: true });
+        tx.update(subRef, { pointsAwarded: true, pointsAwardedValue: pointsToAdd });
       }
     });
 
