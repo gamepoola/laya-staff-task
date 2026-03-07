@@ -109,27 +109,24 @@ async function setStatus(id, status){
     const subRef = db().collection("submissions").doc(id);
 
     await db().runTransaction(async (tx) => {
-      const snap = await tx.get(subRef);
-      if (!snap.exists) throw new Error("Submission not found");
+      // ✅ READS FIRST (Firestore transactions require all reads before all writes)
+      const subSnap = await tx.get(subRef);
+      if (!subSnap.exists) throw new Error("Submission not found");
 
-      const data = snap.data() || {};
+      const data = subSnap.data() || {};
       const alreadyAwarded = !!data.pointsAwarded;
       const staffUid = data.staffUid;
 
-      tx.update(subRef, {
-        status,
-        reviewerUid: user.uid,
-        reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      const shouldAward = (status === "approved" && staffUid && !alreadyAwarded);
 
-      // Award points only once per submission, when status becomes 'approved'
-      // Points by priority: Normal=1, High=2, Critical=3
-      if (status === "approved" && staffUid && !alreadyAwarded) {
-        let pointsToAdd = 1;
+      // Compute points by task priority (default Normal=1)
+      let pointsToAdd = 0;
+      if (shouldAward) {
+        pointsToAdd = 1;
 
         if (data.taskId) {
           const taskRef = db().collection("tasks").doc(String(data.taskId));
-          const taskSnap = await tx.get(taskRef);
+          const taskSnap = await tx.get(taskRef); // read before writes
           if (taskSnap.exists) {
             const t = taskSnap.data() || {};
             const p = String(t.priority || "Normal").toLowerCase();
@@ -138,10 +135,25 @@ async function setStatus(id, status){
             else pointsToAdd = 1;
           }
         }
+      }
 
+      // ✅ WRITES AFTER READS
+      const updateData = {
+        status,
+        reviewerUid: user.uid,
+        reviewedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      if (shouldAward) {
+        updateData.pointsAwarded = true;
+        updateData.pointsAwardedValue = pointsToAdd;
+      }
+
+      tx.update(subRef, updateData);
+
+      if (shouldAward) {
         const staffRef = db().collection("staff").doc(staffUid);
         tx.set(staffRef, { points: firebase.firestore.FieldValue.increment(pointsToAdd) }, { merge: true });
-        tx.update(subRef, { pointsAwarded: true, pointsAwardedValue: pointsToAdd });
       }
     });
 
