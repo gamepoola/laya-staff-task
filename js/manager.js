@@ -48,7 +48,7 @@ async function loadKpi(date){
 async function loadSubmissions(){
   const date = el("filterDate").value || todayStr();
   const body = el("subRows");
-  body.innerHTML = "<tr><td colspan='8' class='small'>กำลังโหลด...</td></tr>";
+  body.innerHTML = "<tr><td colspan='7' class='small'>กำลังโหลด...</td></tr>";
 
   let snap;
   try{
@@ -61,7 +61,7 @@ async function loadSubmissions(){
   }
 
   if(snap.empty){
-    body.innerHTML = "<tr><td colspan='8' class='small'>ยังไม่มีการส่งงานในวันที่เลือก</td></tr>";
+    body.innerHTML = "<tr><td colspan='7' class='small'>ยังไม่มีการส่งงานในวันที่เลือก</td></tr>";
     await loadKpi(date);
     return;
   }
@@ -96,8 +96,7 @@ async function loadSubmissions(){
             <button class="danger" onclick="deleteSubmission('${doc.id}')">Delete</button>
           </div>
         </td>
-        <td class="small">${escapeHtml(s.photoPath||"")}</td>
-      </tr>
+</tr>
     `);
   });
 
