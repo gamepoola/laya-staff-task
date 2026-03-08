@@ -123,3 +123,43 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   background: rgba(0,0,0,.22);
 }
 .footer{ margin-top: 18px; font-size: 12px; color: var(--muted); }
+
+/* Mobile tweaks */
+.table-wrap{
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.table-wrap .table{
+  min-width: 720px;
+}
+@media (max-width: 720px){
+  .container{ padding: 12px; }
+  .header{ flex-direction: column; align-items:flex-start; gap: 10px; }
+  .pills{ width:100%; flex-wrap: wrap; gap: 8px; }
+  .pills button{ flex:1; min-width: 140px; }
+  .actions{ flex-wrap: wrap; gap: 8px; }
+  .actions button{ flex:1; min-width: 140px; }
+  .card{ padding: 14px; }
+  .table{ font-size: 13px; }
+  .thumb{ width:44px; height:44px; border-radius: 10px; }
+  /* Make action buttons stack inside tables */
+  .table-sub td:last-child .row,
+  .table-staff td:nth-child(4) .row{ flex-direction: column; align-items: stretch; }
+  .table-sub td:last-child .row button,
+  .table-staff td:nth-child(4) .row button{ width:100%; }
+  /* Hide less-important columns on small screens */
+  .table-sub th:nth-child(4), .table-sub td:nth-child(4){ display:none; } /* Dept */
+  .table-sub th:nth-child(6), .table-sub td:nth-child(6){ display:none; } /* Date */
+  .table-report th:nth-child(3), .table-report td:nth-child(3){ display:none; } /* Position */
+  .table-report th:nth-child(4), .table-report td:nth-child(4){ display:none; } /* Department */
+  .table-points th:nth-child(3), .table-points td:nth-child(3){ display:none; } /* Position */
+  .table-points th:nth-child(4), .table-points td:nth-child(4){ display:none; } /* Department */
+  .table-staff th:nth-child(2), .table-staff td:nth-child(2){ display:none; } /* Department */
+  .table-staff th:nth-child(5), .table-staff td:nth-child(5){ display:none; } /* Date */
+  /* Reduce min-width when columns hidden */
+  .table-wrap .table{ min-width: 520px; }
+}
+@media (max-width: 420px){
+  .actions button, .pills button{ min-width: 100%; }
+  .table-wrap .table{ min-width: 480px; }
+}

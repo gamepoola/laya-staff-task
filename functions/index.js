@@ -189,14 +189,3 @@ exports.archiveApprovedToDrive = onDocumentUpdated("submissions/{subId}", async 
     driveUploadedAt: admin.firestore.FieldValue.serverTimestamp()
   });
 });
-
-
-/**
- * Cleanup tasks that were NOT done when crossing day.
- * - Runs daily (Asia/Bangkok)
- * - If task.forDate < today AND no submission exists for that task -> DELETE task
- * - If there is a submission -> set active=false (keep record)
- *
- * Note: This only targets tasks that have `forDate` (daily jobs). Side jobs without forDate are not touched.
- */
-
