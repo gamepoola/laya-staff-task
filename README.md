@@ -225,3 +225,22 @@ Deploy:
 - ค้นหา tasks ที่ `department=...` และ `forDate=เมื่อวาน`
 - สร้าง tasks ใหม่ที่ `forDate=วันนี้` พร้อม `copiedFromDate`
 - ถ้ามีงาน auto/copy ของวันนี้อยู่แล้ว จะถามก่อนปิดของเดิม
+
+
+---
+
+## ✅ Auto delete old unsubmitted tasks (cross-day)
+เพิ่ม Cloud Function `cleanupUnsubmittedTasksDaily` (Scheduled, Asia/Bangkok) เพื่อจัดการงานรายวันเมื่อข้ามวัน:
+- task ที่มี `forDate < วันนี้` และ **ไม่มี submission** → ลบ task ทิ้ง
+- ถ้ามี submission → ปิดงาน (`active=false`) เพื่อเก็บประวัติ
+
+Deploy:
+- `firebase deploy --only functions`
+
+
+---
+
+## ✅ Change: ไม่ลบงานข้ามวัน (ดูตามวันที่แทน)
+- ยกเลิกการลบงานรายวันเมื่อข้ามวัน
+- หน้า Manager: Task List จะแสดงเฉพาะงานของวันที่เลือก (filterDate)
+- หน้า Staff: เพิ่ม View date เพื่อดู/ส่งงานย้อนหลังได้ (งานจะแสดงตามวันที่เลือก)

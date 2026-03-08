@@ -41,7 +41,7 @@ async function renderTasks(uid, dept){
   }
 
   // today already defined above
-  const filtered = uniq.filter(t => !t.forDate || t.forDate === today);
+  const filtered = uniq.filter(t => !t.forDate || t.forDate === viewDate);
 
   if(!filtered.length){
     body.innerHTML = "<tr><td colspan='5' class='small'>วันนี้ยังไม่มีงานที่ถูกมอบหมาย (ตามวัน)</td></tr>";
