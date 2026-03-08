@@ -57,7 +57,7 @@
       <div class="hr"></div>
       <h3 style="margin:0 0 10px 0;">Daily Submissions</h3>
       <div class="small">Approve/Reject ได้เลย และลบด้วย PIN ผู้จัดการ</div>
-      <table class="table" style="margin-top:10px;">
+      <div class="table-wrap" style="margin-top:10px;"><table class="table table-sub">
         <thead>
           <tr>
             <th>Photo</th>
@@ -70,13 +70,13 @@
 </tr>
         </thead>
         <tbody id="subRows"></tbody>
-      </table>
+      </table></div>
     </div>
 
     <div class="card" style="margin-top:14px;">
       <h3 style="margin:0 0 10px 0;">Report: Who hasn't submitted?</h3>
       <div class="small">นิยาม: “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” แต่ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก</div>
-      <table class="table" style="margin-top:10px;">
+      <div class="table-wrap" style="margin-top:10px;"><table class="table table-report">
         <thead>
           <tr>
             <th>Staff ID</th>
@@ -88,7 +88,7 @@
           </tr>
         </thead>
         <tbody id="reportRows"></tbody>
-      </table>
+      </table></div>
       <div class="hint">ถ้าต้องการให้เป็น “ยังไม่ส่งเลยแม้แต่งานเดียว” บอกฉันได้ เดี๋ยวปรับนิยามให้</div>
     </div>
 
@@ -103,7 +103,7 @@
           <button class="secondary" id="refreshPointsBtn">Refresh Points</button>
         </div>
       </div>
-      <table class="table" style="margin-top:10px;">
+      <div class="table-wrap" style="margin-top:10px;"><table class="table table-points">
         <thead>
           <tr>
             <th>Staff ID</th>
@@ -114,7 +114,7 @@
           </tr>
         </thead>
         <tbody id="pointsRows"></tbody>
-      </table>
+      </table></div>
       <div class="hint">Tip: คะแนนถูกเก็บใน Firestore ที่ <code>staff/{uid}.points</code></div>
     </div>
 
@@ -204,7 +204,7 @@
     <div class="card" style="margin-top:14px;">
       <h3 style="margin:0 0 10px 0;">Task List</h3>
       <div class="small">เปิด/ปิดงาน, แก้ไข, ลบ (ต้องใช้ PIN)</div>
-      <table class="table" style="margin-top:10px;">
+      <div class="table-wrap" style="margin-top:10px;"><table class="table table-tasklist">
         <thead>
           <tr>
             <th>Task</th>
@@ -216,7 +216,7 @@
           </tr>
         </thead>
         <tbody id="taskRows"></tbody>
-      </table>
+      </table></div>
     </div>
 
     <div class="footer">Laya Staff Task — Manager Console (v3).</div>
