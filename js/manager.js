@@ -1,3 +1,78 @@
+
+
+const PRESET_DAILY_TASKS = {
+  // Loaded from Daily Job Assighnment.xlsx (embedded in this build)
+  Breakfast: [
+  "Prepare Coffee Mug & Spoon",
+  "Clean Trays & Trolleys",
+  "Clean Salt & Pepper Shaker",
+  "Clear Bin & Clean Station",
+  "Prepare Tissue & Toothpick",
+  "Clean Table Wipes (Rag)",
+  "Prepare Pocket Spoon",
+  "Carry Pot Coffee & Thermos",
+  "Clean Baby Chairs",
+  "Clean Coffee Machine",
+  "Check Cushion / Pillow",
+  "Clean Station Coffee",
+  "Refill Sugar Bowl",
+  "Cleanliness Front Restaurant Area",
+  "Prepare Cutlery",
+  "Prepare & Change Astray",
+  "Lay Out Tables & Chairs",
+  "Clean Tables & Chairs",
+  "Clean Back Area",
+  "Clean Menu"
+],
+  LunchDinner: [
+  "Menu & Drink List",
+  "Clean Tidy Station Service",
+  "Prepare & Change Astray",
+  "Clean Cutlery",
+  "Table Booking",
+  "Clean & Tidy FB Storage Room",
+  "Sofa Area / Station Host / Outside",
+  "Counting Nipkin & Record",
+  "Prepare Station Service",
+  "Clean Baby Chairs",
+  "Prepare Cutlery",
+  "Clean Table Cloth",
+  "Salt & Pepper Shaker",
+  "Clean Bin & Clean Station Clear",
+  "Prepare Set Up Nipkin",
+  "Clean Tidy Jack Tray & Troley",
+  "Glass Were (Water)",
+  "Clean Coffee Machine Station",
+  "Tissue Glass & Thoothspick",
+  "Prepare Cutlery Breakfast",
+  "Clean Table & Chair",
+  "Set up Coffee & Tea Station",
+  "Pocket Spoon Buffet Line",
+  "Folding Tissue Nipkin",
+  "Prepare Food Runner",
+  "Check Cleanliness Restaurant Area"
+]
+};
+
+function slugId(s){
+  return String(s||"")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_\-]/g, "_")
+    .replace(/_+/g, "_")
+    .slice(0, 120);
+}
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 async function loadManagerPage(){
   const user = await requireAuth();
   const profile = await getProfile(user.uid);
@@ -27,13 +102,25 @@ async function loadManagerPage(){
   el("createTaskBtn").onclick = createTask;
   el("assignMode").onchange = onAssignModeChange;
   el("reportBtn").onclick = loadNotSubmittedReport;
+  if (el("toggleReportBtn")) el("toggleReportBtn").onclick = toggleReportPanel;
+  if (el("toggleSetupBtn")) el("toggleSetupBtn").onclick = toggleSetupPanel;
+  // default collapse: report + points
+  if (el("reportPanel")) el("reportPanel").style.display = "none";
+  if (el("toggleReportBtn")) el("toggleReportBtn").textContent = "Show report";
+  if (el("pointsPanel")) el("pointsPanel").style.display = "none";
+  if (el("togglePointsBtn")) el("togglePointsBtn").textContent = "Show points";
   if (el("checklistBtn")) el("checklistBtn").onclick = () => window.location.href = "checklist.html";
   if (el("refreshPointsBtn")) el("refreshPointsBtn").onclick = loadStaffPoints;
+  if (el("togglePointsBtn")) el("togglePointsBtn").onclick = togglePointsPanel;
+  // default: hide points list (too long)
+  if (el("pointsPanel")) el("pointsPanel").style.display = "none";
+  if (el("togglePointsBtn")) el("togglePointsBtn").textContent = "Show points";
 
   await loadSubmissions();
   await loadTaskList();
   await loadNotSubmittedReport();
-  await loadStaffPoints();
+  // points list loads only when expanded
+  // await loadStaffPoints();
 }
 
 async function loadKpi(date){
@@ -176,7 +263,8 @@ async function setStatus(id, status){
     toast("อัปเดตสถานะแล้ว ✅");
     await loadSubmissions();
     await loadNotSubmittedReport();
-    await loadStaffPoints();
+    // points list loads only when expanded
+  // await loadStaffPoints();
   }catch(e){
     console.error(e);
     toast("อัปเดตไม่สำเร็จ: " + (e?.message||e), "danger");
@@ -261,7 +349,8 @@ async function loadNotSubmittedReport(){
 
   // Fetch all active tasks once
   const taskSnap = await db().collection("tasks").where("active","==",true).get();
-  const tasks = taskSnap.docs.map(d=>({id:d.id, ...d.data()}));
+  const tasks = taskSnap.docs.map(d=>({id:d.id, ...d.data()}))
+    .filter(t => !t.forDate || t.forDate === date);
 
   // Fetch staff (limit 500 for prototype)
   const staffSnap = await db().collection("staff").limit(500).get();
@@ -452,7 +541,8 @@ async function toggleTask(id, to){
   toast("อัปเดตงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
-  await loadStaffPoints();
+  // points list loads only when expanded
+  // await loadStaffPoints();
 }
 
 async function editTask(id){
@@ -467,7 +557,8 @@ async function editTask(id){
   toast("แก้ไขงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
-  await loadStaffPoints();
+  // points list loads only when expanded
+  // await loadStaffPoints();
 }
 
 async function deleteTask(id){
@@ -479,7 +570,8 @@ async function deleteTask(id){
   toast("ลบงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
-  await loadStaffPoints();
+  // points list loads only when expanded
+  // await loadStaffPoints();
 }
 
 function onAssignModeChange(){
@@ -589,5 +681,261 @@ async function loadStaffPoints(){
     console.error(e);
     body.innerHTML = "<tr><td colspan='5' class='small'>โหลดคะแนนไม่สำเร็จ</td></tr>";
     toast("โหลดคะแนนไม่สำเร็จ: " + (e?.message||e), "danger");
+  }
+}
+
+
+function togglePointsPanel(){
+  const panel = el("pointsPanel");
+  const btn = el("togglePointsBtn");
+  if(!panel || !btn) return;
+
+  const hidden = panel.style.display === "none" || panel.style.display === "";
+  if(hidden){
+    panel.style.display = "block";
+    btn.textContent = "Hide points";
+    loadStaffPoints();
+  }else{
+    panel.style.display = "none";
+    btn.textContent = "Show points";
+  }
+}
+
+
+function toggleReportPanel(){
+  const panel = el("reportPanel");
+  const btn = el("toggleReportBtn");
+  if(!panel || !btn) return;
+
+  const hidden = panel.style.display === "none" || panel.style.display === "";
+  if(hidden){
+    panel.style.display = "block";
+    btn.textContent = "Hide report";
+  }else{
+    panel.style.display = "none";
+    btn.textContent = "Show report";
+  }
+}
+
+function toggleSetupPanel(){
+  const panel = el("setupPanel");
+  const btn = el("toggleSetupBtn");
+  if(!panel || !btn) return;
+
+  const hidden = panel.style.display === "none";
+  if(hidden){
+    panel.style.display = "block";
+    btn.textContent = "Hide tools";
+  }else{
+    panel.style.display = "none";
+    btn.textContent = "Show tools";
+  }
+}
+
+
+async function seedTaskLibrary(){
+  try{
+    const depts = ["The Taste", "The Mangrove"];
+    const periods = ["Breakfast", "LunchDinner"];
+
+    const batch = db().batch();
+    let writes = 0;
+
+    for(const dept of depts){
+      for(const period of periods){
+        const titles = PRESET_DAILY_TASKS[period] || [];
+        for(const title of titles){
+          const docId = slugId(`${dept}_${period}_${title}`);
+          const ref = db().collection("task_templates").doc(docId);
+          batch.set(ref, {
+            title,
+            description: "",
+            department: dept,
+            period,
+            priority: "Normal",
+            active: true,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
+          writes++;
+        }
+      }
+    }
+
+    if(writes === 0){
+      toast("ไม่มี task template ใน preset", "danger");
+      return;
+    }
+
+    await batch.commit();
+    toast(`Seed library สำเร็จ ✅ (${writes} tasks)`);
+    await loadTaskTemplatesToSelect();
+    await updateRandInfo();
+  }catch(e){
+    console.error(e);
+    toast("Seed library ไม่สำเร็จ: " + (e?.message||e), "danger");
+  }
+}
+
+async function loadTaskTemplatesToSelect(){
+  const sel = el("taskTemplateSelect");
+  if(!sel) return;
+
+  const dept = el("taskDept")?.value?.trim() || el("randDept")?.value || "The Taste";
+
+  // Load templates for selected department (all periods)
+  const snap = await db().collection("task_templates")
+    .where("department","==",dept)
+    .where("active","==",true)
+    .get();
+
+  const list = snap.docs.map(d=>({id:d.id, ...d.data()}))
+    .sort((a,b)=> String(a.period||"").localeCompare(String(b.period||"")) || String(a.title||"").localeCompare(String(b.title||"")));
+
+  sel.innerHTML = `<option value="">— Select from library —</option>`;
+  for(const t of list){
+    const label = `${t.title} ${t.period ? "(" + t.period + ")" : ""}`;
+    sel.insertAdjacentHTML("beforeend", `<option value="${escapeHtml(t.id)}">${escapeHtml(label)}</option>`);
+  }
+}
+
+async function applySelectedTemplate(){
+  const sel = el("taskTemplateSelect");
+  if(!sel || !sel.value) return;
+
+  try{
+    const snap = await db().collection("task_templates").doc(sel.value).get();
+    if(!snap.exists) return;
+    const t = snap.data() || {};
+    if (el("taskTitle")) el("taskTitle").value = t.title || "";
+    if (el("taskDescription")) el("taskDescription").value = t.description || "";
+    if (el("taskDept")) el("taskDept").value = t.department || "";
+    if (el("taskPriority")) el("taskPriority").value = t.priority || "Normal";
+  }catch(e){
+    console.error(e);
+    toast("เลือก template ไม่สำเร็จ: " + (e?.message||e), "danger");
+  }
+}
+
+async function updateRandInfo(){
+  try{
+    const dept = el("randDept")?.value || "The Taste";
+    const period = el("randPeriod")?.value || "All";
+
+    // staff count
+    const staffSnap = await db().collection("staff").where("department","==",dept).limit(500).get();
+    const staff = staffSnap.docs.map(d=>({uid:d.id, ...d.data()})).filter(s => (s.role || "staff") !== "manager");
+    const staffCount = staff.length;
+
+    // template count
+    let q = db().collection("task_templates").where("department","==",dept).where("active","==",true);
+    if(period !== "All") q = q.where("period","==",period);
+    const tplSnap = await q.get();
+    const taskCount = tplSnap.size;
+
+    if(el("randInfo")) el("randInfo").value = `${staffCount} staff / ${taskCount} tasks`;
+  }catch(e){
+    console.error(e);
+  }
+}
+
+async function clearAutoJobs(){
+  const dept = el("randDept")?.value || "The Taste";
+  const date = el("randDate")?.value || todayStr();
+  try{
+    // find auto-generated tasks for this date+dept
+    const snap = await db().collection("tasks")
+      .where("autoGenerated","==",true)
+      .where("department","==",dept)
+      .where("forDate","==",date)
+      .get();
+
+    if(snap.empty){
+      toast("ไม่พบงาน auto สำหรับวัน/แผนกนี้", "info");
+      return;
+    }
+
+    const batch = db().batch();
+    snap.docs.forEach(d=> batch.update(d.ref, { active:false, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }));
+    await batch.commit();
+
+    toast(`ปิดงาน auto แล้ว ✅ (${snap.size} tasks)`);
+    await loadTaskList();
+    await loadNotSubmittedReport();
+  }catch(e){
+    console.error(e);
+    toast("Clear auto jobs ไม่สำเร็จ: " + (e?.message||e), "danger");
+  }
+}
+
+async function randomAssignDailyJobs(){
+  const dept = el("randDept")?.value || "The Taste";
+  const period = el("randPeriod")?.value || "All";
+  const date = el("randDate")?.value || todayStr();
+
+  try{
+    // load staff in department
+    const staffSnap = await db().collection("staff").where("department","==",dept).limit(500).get();
+    const staff = staffSnap.docs.map(d=>({uid:d.id, ...d.data()})).filter(s => (s.role || "staff") !== "manager");
+
+    if(!staff.length){
+      toast("ไม่พบพนักงานใน Department นี้", "danger");
+      return;
+    }
+
+    // load templates
+    let q = db().collection("task_templates").where("department","==",dept).where("active","==",true);
+    if(period !== "All") q = q.where("period","==",period);
+    const tplSnap = await q.get();
+    const templates = tplSnap.docs.map(d=>({id:d.id, ...d.data()}));
+
+    if(!templates.length){
+      toast("ยังไม่มีงานใน Library (กด Seed library ก่อน)", "danger");
+      return;
+    }
+
+    // disable old auto tasks for same date+dept to avoid duplicates
+    await clearAutoJobs(); // will set active:false if found (safe)
+    
+    const staffShuffled = shuffle(staff);
+    const tasksShuffled = shuffle(templates);
+
+    // แจกให้ครบคนก่อน แล้วค่อยวนซ้ำ (round-robin แบบเป็นรอบ)
+    // รอบที่ 1: ทุกคนได้งานละ 1 (ถ้างานพอ)
+    // รอบที่ 2: แจกซ้ำรอบใหม่ตามลำดับเดิม
+    const batch = db().batch();
+    let staffIdx = 0;
+    let round = 1;
+    for(const t of tasksShuffled){
+      const assignee = staffShuffled[staffIdx];
+      const ref = db().collection("tasks").doc(); // new
+      batch.set(ref, {
+        title: t.title || "",
+        description: t.description || "",
+        department: dept,
+        priority: t.priority || "Normal",
+        assignedTo: assignee.uid, // staff uid
+        active: true,
+        forDate: date,
+        period: t.period || "",
+        autoGenerated: true,
+        templateId: t.id,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      staffIdx++;
+      if (staffIdx >= staffShuffled.length) {
+        staffIdx = 0;
+        round++;
+      }
+    }
+    await batch.commit();
+
+    toast(`สุ่มแจกงานสำเร็จ ✅ (${tasksShuffled.length} tasks / ${staffShuffled.length} staff)`);
+    await loadTaskList();
+    await loadNotSubmittedReport();
+  }catch(e){
+    console.error(e);
+    toast("สุ่มแจกงานไม่สำเร็จ: " + (e?.message||e), "danger");
   }
 }
