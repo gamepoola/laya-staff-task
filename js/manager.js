@@ -87,6 +87,14 @@ async function loadManagerPage(){
   el("mgrDept").textContent = profile?.department || "-";
 
   el("filterDate").value = todayStr();
+  if (el("taskListDate")) el("taskListDate").value = el("filterDate").value;
+  if (el("taskListDate")) el("taskListDate").addEventListener("change", async ()=>{
+    if (el("filterDate")) el("filterDate").value = el("taskListDate").value;
+    await loadSubmissions();
+    await loadTaskList();
+    await loadNotSubmittedReport();
+  });
+  if (el("taskListRefreshBtn")) el("taskListRefreshBtn").onclick = loadTaskList;
   if (el("showApprovedChk")) {
     el("showApprovedChk").checked = false; // default: hide approved
     el("showApprovedChk").addEventListener("change", async () => {
@@ -1023,3 +1031,5 @@ async function copyYesterdayAssignments(){
     toast("Copy yesterday ไม่สำเร็จ: " + (e?.message||e), "danger");
   }
 }
+
+function selectedFilterDate(){ const a=el('taskListDate'); if(a&&a.value)return a.value; const b=el('filterDate'); if(b&&b.value)return b.value; return todayStr(); }

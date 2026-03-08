@@ -283,8 +283,19 @@
     </div>
 
     <div class="card" style="margin-top:14px;">
-      <h3 style="margin:0 0 10px 0;">Task List</h3>
-      <div class="small">เปิด/ปิดงาน, แก้ไข, ลบ (ต้องใช้ PIN)</div>
+      <div class="row" style="align-items:flex-end;">
+        <div>
+          <h3 style="margin:0 0 6px 0;">Task List</h3>
+          <div class="small">เปิด/ปิดงาน, แก้ไข, ลบ (ต้องใช้ PIN)</div>
+        </div>
+        <div class="actions" style="flex:0; display:flex; gap:10px; align-items:flex-end;">
+          <div>
+            <label class="small" style="display:block; margin-bottom:6px;">Task date</label>
+            <input id="taskListDate" type="date" />
+          </div>
+          <button class="secondary" id="taskListRefreshBtn" style="height:42px;">Refresh tasks</button>
+        </div>
+      </div>
       <table class="table" style="margin-top:10px;">
         <thead>
           <tr>
