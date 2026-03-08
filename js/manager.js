@@ -28,13 +28,17 @@ async function loadManagerPage(){
   el("assignMode").onchange = onAssignModeChange;
   el("reportBtn").onclick = loadNotSubmittedReport;
   if (el("checklistBtn")) el("checklistBtn").onclick = () => window.location.href = "checklist.html";
-  if (el("importStaffBtn")) el("importStaffBtn").onclick = importStaffFromExcel;
   if (el("refreshPointsBtn")) el("refreshPointsBtn").onclick = loadStaffPoints;
+  if (el("togglePointsBtn")) el("togglePointsBtn").onclick = togglePointsPanel;
+  // default: hide points list (too long)
+  if (el("pointsPanel")) el("pointsPanel").style.display = "none";
+  if (el("togglePointsBtn")) el("togglePointsBtn").textContent = "Show points";
 
   await loadSubmissions();
   await loadTaskList();
   await loadNotSubmittedReport();
-  await loadStaffPoints();
+  // points list loads only when expanded
+  // await loadStaffPoints();
 }
 
 async function loadKpi(date){
@@ -177,7 +181,8 @@ async function setStatus(id, status){
     toast("อัปเดตสถานะแล้ว ✅");
     await loadSubmissions();
     await loadNotSubmittedReport();
-    await loadStaffPoints();
+    // points list loads only when expanded
+  // await loadStaffPoints();
   }catch(e){
     console.error(e);
     toast("อัปเดตไม่สำเร็จ: " + (e?.message||e), "danger");
@@ -453,7 +458,8 @@ async function toggleTask(id, to){
   toast("อัปเดตงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
-  await loadStaffPoints();
+  // points list loads only when expanded
+  // await loadStaffPoints();
 }
 
 async function editTask(id){
@@ -468,7 +474,8 @@ async function editTask(id){
   toast("แก้ไขงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
-  await loadStaffPoints();
+  // points list loads only when expanded
+  // await loadStaffPoints();
 }
 
 async function deleteTask(id){
@@ -480,7 +487,8 @@ async function deleteTask(id){
   toast("ลบงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
-  await loadStaffPoints();
+  // points list loads only when expanded
+  // await loadStaffPoints();
 }
 
 function onAssignModeChange(){
@@ -594,136 +602,18 @@ async function loadStaffPoints(){
 }
 
 
-// =====================
-// Import Staff Directory (Excel -> Firestore)
-// =====================
-function normalizeRole(v){
-  const s = String(v || "").trim().toLowerCase();
-  if (s.includes("manager")) return "manager";
-  return "staff";
-}
-function deriveDepartment(position){
-  const p = String(position || "").toLowerCase();
-  if (p.includes("mangrove")) return "The Mangrove";
-  if (p.includes("the taste") || p.includes("taste")) return "The Taste";
-  if (p.includes("aroonsawat") || p.includes("aroon")) return "Aroonsawat";
-  if (p.includes("banquet")) return "Banquet";
-  return "F&B";
-}
+function togglePointsPanel(){
+  const panel = el("pointsPanel");
+  const btn = el("togglePointsBtn");
+  if(!panel || !btn) return;
 
-async function importStaffFromExcel(){
-  try{
-    const user = await requireAuth();
-    const profile = await getProfile(user.uid);
-    if(profile?.role !== "manager"){
-      toast("สิทธิ์ไม่พอ (ต้องเป็น Manager)", "danger");
-      return;
-    }
-
-    const fileEl = el("staffExcelFile");
-    const outEl = el("importStaffResult");
-    const file = fileEl && fileEl.files && fileEl.files[0];
-
-    if(!file){
-      toast("กรุณาเลือกไฟล์ Excel ก่อน", "danger");
-      return;
-    }
-    if(typeof XLSX === "undefined"){
-      toast("ไม่พบไลบรารี XLSX (ลองรีเฟรชหน้า)", "danger");
-      return;
-    }
-
-    outEl.textContent = "กำลังอ่านไฟล์...";
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type: "array" });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
-
-    // Find header row (must contain NAME and ID)
-    let headerIdx = -1;
-    for(let i=0;i<Math.min(rows.length, 30);i++){
-      const r = rows[i].map(x => String(x||"").trim().toUpperCase());
-      if(r.includes("ID") && r.includes("NAME")){
-        headerIdx = i;
-        break;
-      }
-    }
-    if(headerIdx === -1){
-      outEl.textContent = "";
-      toast("ไม่พบแถวหัวตาราง (ต้องมีคอลัมน์ NAME และ ID)", "danger");
-      return;
-    }
-
-    const header = rows[headerIdx].map(x => String(x||"").trim());
-    const idxOf = (label) => header.findIndex(h => String(h).trim().toUpperCase() === label);
-
-    const nameIdx = idxOf("NAME");
-    const nickIdx = header.findIndex(h => String(h).trim().toUpperCase().includes("NICK"));
-    const idIdx = idxOf("ID");
-    const posIdx = header.findIndex(h => String(h).trim().toUpperCase().includes("POSITION"));
-
-    // Role column: if there is no header, assume last column
-    let roleIdx = header.findIndex(h => String(h).trim().toUpperCase().includes("ROLE") || String(h).trim().toUpperCase().includes("LEVEL"));
-    if(roleIdx === -1) roleIdx = header.length - 1;
-
-    let imported = 0;
-    let skipped = 0;
-
-    const batchMax = 450;
-    let batch = db().batch();
-    let ops = 0;
-
-    for(let i=headerIdx+1;i<rows.length;i++){
-      const r = rows[i];
-      const rawId = r[idIdx];
-      const staffID = String(rawId || "").trim();
-      if(!staffID){
-        continue;
-      }
-
-      const name = String(r[nameIdx] || "").trim();
-      const nickName = String(r[nickIdx] || "").trim();
-      const position = String(r[posIdx] || "").trim();
-      const role = normalizeRole(r[roleIdx]);
-      const department = deriveDepartment(position);
-
-      if(!name){
-        skipped++;
-        continue;
-      }
-
-      const docRef = db().collection("staff_directory").doc(staffID);
-      batch.set(docRef, {
-        staffID,
-        name,
-        nickName,
-        position,
-        department,
-        role,
-        active: true,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-
-      ops++;
-      imported++;
-
-      if(ops >= batchMax){
-        await batch.commit();
-        batch = db().batch();
-        ops = 0;
-      }
-    }
-
-    if(ops > 0){
-      await batch.commit();
-    }
-
-    outEl.textContent = `Import สำเร็จ ✅  ${imported} รายการ (ข้าม ${skipped} รายการ)`;
-    toast("Import รายชื่อสำเร็จ ✅", "info");
-  }catch(e){
-    console.error(e);
-    toast("Import ไม่สำเร็จ: " + (e?.message||e), "danger");
-    const outEl = el("importStaffResult");
-    if(outEl) outEl.textContent = "";
+  const hidden = panel.style.display === "none" || panel.style.display === "";
+  if(hidden){
+    panel.style.display = "block";
+    btn.textContent = "Hide points";
+    loadStaffPoints();
+  }else{
+    panel.style.display = "none";
+    btn.textContent = "Show points";
   }
 }

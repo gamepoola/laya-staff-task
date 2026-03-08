@@ -57,6 +57,7 @@
       <div class="hr"></div>
       <h3 style="margin:0 0 10px 0;">Daily Submissions</h3>
       <div class="small">Approve/Reject ได้เลย และลบด้วย PIN ผู้จัดการ</div>
+      <div id="pointsPanel">
       <table class="table" style="margin-top:10px;">
         <thead>
           <tr>
@@ -76,6 +77,7 @@
     <div class="card" style="margin-top:14px;">
       <h3 style="margin:0 0 10px 0;">Report: Who hasn't submitted?</h3>
       <div class="small">นิยาม: “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” แต่ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก</div>
+      <div id="pointsPanel">
       <table class="table" style="margin-top:10px;">
         <thead>
           <tr>
@@ -101,8 +103,10 @@
         </div>
         <div class="actions" style="flex:0;">
           <button class="secondary" id="refreshPointsBtn">Refresh Points</button>
+          <button class="secondary" id="togglePointsBtn">Hide points</button>
         </div>
       </div>
+      <div id="pointsPanel">
       <table class="table" style="margin-top:10px;">
         <thead>
           <tr>
@@ -116,6 +120,7 @@
         <tbody id="pointsRows"></tbody>
       </table>
       <div class="hint">Tip: คะแนนถูกเก็บใน Firestore ที่ <code>staff/{uid}.points</code></div>
+    </div>
     </div>
 
 <div class="grid two" style="margin-top:14px;">
@@ -152,20 +157,6 @@
         <div class="actions" style="margin-top:10px;">
           <button id="createStaffBtn" class="success">Create Staff</button>
         </div>
-
-        
-        <div class="hr" style="margin:14px 0;"></div>
-        <h3 style="margin:0 0 10px 0;">Import Staff from Excel</h3>
-        <div class="small">อัปโหลดไฟล์รายชื่อพนักงาน (xlsx) เพื่อสร้างฐานข้อมูล <code>staff_directory</code> (ใช้สำหรับแยก Staff/Manager และตั้งรหัสครั้งแรก)</div>
-
-        <label>Staff list (Excel .xlsx)</label>
-        <input id="staffExcelFile" type="file" accept=".xlsx,.xls" />
-
-        <div class="actions" style="margin-top:10px;">
-          <button class="secondary" id="importStaffBtn">Import to Firestore</button>
-        </div>
-
-        <div id="importStaffResult" class="small" style="margin-top:8px;"></div>
 
         <div class="hint">หมายเหตุ: การสร้างผู้ใช้จากหน้าเว็บเป็น prototype — ถ้าต้องการปลอดภัยมากขึ้น ทำผ่าน Admin/Cloud Functions</div>
       </div>
@@ -218,6 +209,7 @@
     <div class="card" style="margin-top:14px;">
       <h3 style="margin:0 0 10px 0;">Task List</h3>
       <div class="small">เปิด/ปิดงาน, แก้ไข, ลบ (ต้องใช้ PIN)</div>
+      <div id="pointsPanel">
       <table class="table" style="margin-top:10px;">
         <thead>
           <tr>
@@ -239,7 +231,6 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/firebase-init.js"></script>
 <script src="js/auth.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="js/manager.js"></script>
 </body>
 </html>
