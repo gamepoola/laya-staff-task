@@ -27,6 +27,13 @@ async function loadManagerPage(){
   el("createTaskBtn").onclick = createTask;
   el("assignMode").onchange = onAssignModeChange;
   el("reportBtn").onclick = loadNotSubmittedReport;
+  if (el("toggleReportBtn")) el("toggleReportBtn").onclick = toggleReportPanel;
+  if (el("toggleSetupBtn")) el("toggleSetupBtn").onclick = toggleSetupPanel;
+  // default collapse: report + points
+  if (el("reportPanel")) el("reportPanel").style.display = "none";
+  if (el("toggleReportBtn")) el("toggleReportBtn").textContent = "Show report";
+  if (el("pointsPanel")) el("pointsPanel").style.display = "none";
+  if (el("togglePointsBtn")) el("togglePointsBtn").textContent = "Show points";
   if (el("checklistBtn")) el("checklistBtn").onclick = () => window.location.href = "checklist.html";
   if (el("refreshPointsBtn")) el("refreshPointsBtn").onclick = loadStaffPoints;
   if (el("togglePointsBtn")) el("togglePointsBtn").onclick = togglePointsPanel;
@@ -615,5 +622,36 @@ function togglePointsPanel(){
   }else{
     panel.style.display = "none";
     btn.textContent = "Show points";
+  }
+}
+
+
+function toggleReportPanel(){
+  const panel = el("reportPanel");
+  const btn = el("toggleReportBtn");
+  if(!panel || !btn) return;
+
+  const hidden = panel.style.display === "none" || panel.style.display === "";
+  if(hidden){
+    panel.style.display = "block";
+    btn.textContent = "Hide report";
+  }else{
+    panel.style.display = "none";
+    btn.textContent = "Show report";
+  }
+}
+
+function toggleSetupPanel(){
+  const panel = el("setupPanel");
+  const btn = el("toggleSetupBtn");
+  if(!panel || !btn) return;
+
+  const hidden = panel.style.display === "none";
+  if(hidden){
+    panel.style.display = "block";
+    btn.textContent = "Hide tools";
+  }else{
+    panel.style.display = "none";
+    btn.textContent = "Show tools";
   }
 }

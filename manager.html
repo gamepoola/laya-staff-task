@@ -75,9 +75,16 @@
     </div>
 
     <div class="card" style="margin-top:14px;">
-      <h3 style="margin:0 0 10px 0;">Report: Who hasn't submitted?</h3>
-      <div class="small">นิยาม: “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” แต่ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก</div>
-      <div id="pointsPanel">
+      <div class="row" style="align-items:flex-end;">
+        <div>
+          <h3 style="margin:0 0 6px 0;">Report: Who hasn't submitted?</h3>
+          <div class="small">นิยาม: “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” แต่ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก</div>
+        </div>
+        <div class="actions" style="flex:0;">
+          <button class="secondary" id="toggleReportBtn">Show report</button>
+        </div>
+      </div>
+      <div id="reportPanel">
       <table class="table" style="margin-top:10px;">
         <thead>
           <tr>
@@ -103,7 +110,7 @@
         </div>
         <div class="actions" style="flex:0;">
           <button class="secondary" id="refreshPointsBtn">Refresh Points</button>
-          <button class="secondary" id="togglePointsBtn">Hide points</button>
+          <button class="secondary" id="togglePointsBtn">Show points</button>
         </div>
       </div>
       <div id="pointsPanel">
@@ -123,6 +130,18 @@
     </div>
     </div>
 
+
+    <div class="card" style="margin-top:14px;">
+      <div class="row" style="align-items:flex-end;">
+        <div>
+          <h3 style="margin:0 0 6px 0;">Management Tools</h3>
+          <div class="small">สร้างบัญชี / สร้างงาน (สามารถซ่อนได้เพื่อลดความรก)</div>
+        </div>
+        <div class="actions" style="flex:0;">
+          <button class="secondary" id="toggleSetupBtn">Hide tools</button>
+        </div>
+      </div>
+      <div id="setupPanel" style="margin-top:10px;">
 <div class="grid two" style="margin-top:14px;">
       <div class="card">
         <h3 style="margin:0 0 10px 0;">Create Staff Account</h3>
@@ -185,6 +204,9 @@
             </select>
           </div>
         </div>
+      </div>
+    </div>
+
 
         <label>Assign mode</label>
         <select id="assignMode">
