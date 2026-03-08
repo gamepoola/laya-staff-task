@@ -163,3 +163,34 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
   .actions button, .pills button{ min-width: 100%; }
   .table-wrap .table{ min-width: 480px; }
 }
+
+/* Collapsible sections (Manager) */
+details.card summary{
+  list-style: none;
+  cursor: pointer;
+}
+details.card summary::-webkit-details-marker{ display:none; }
+details.card summary .summary-row{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+}
+details.card summary .summary-title h3{ margin:0 0 6px 0; }
+details.card summary .summary-title .small{ opacity:0.9; }
+details.card summary .summary-indicator{
+  font-size: 12px;
+  opacity: 0.85;
+  padding: 8px 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px;
+}
+details.card[open] summary .summary-indicator::after{
+  content: " ▲";
+}
+details.card:not([open]) summary .summary-indicator::after{
+  content: " ▼";
+}
+details.card .section-body{
+  margin-top: 12px;
+}
