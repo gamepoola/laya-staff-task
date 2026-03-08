@@ -35,69 +35,21 @@
       <div class="kpi"><div class="num">v3</div><div class="lbl">Report + Auto</div></div>
     </div>
 
-    <div class="card" style="margin-top:14px;">
-      <div class="row">
-        <div>
-          <label>Filter date</label>
-          <input id="filterDate" type="date" />
+    <details class="card" style="margin-top:14px;" id="pointsSection">
+      <summary>
+        <div class="summary-row">
+          <div class="summary-title">
+            <h3 style="margin:0 0 6px 0;">Staff Points</h3>
+            <div class="small">คะแนนสะสมจะเพิ่มเมื่อ Manager กด Approve (ซ่อนได้เพื่อลดความยาวหน้าเว็บ)</div>
+          </div>
+          <div class="summary-indicator">Show / Hide</div>
         </div>
-        <div class="actions" style="align-self:flex-end;">
-          <label class="small" style="display:flex; gap:8px; align-items:center; margin:0; padding:0 8px;">
-            <input type="checkbox" id="showApprovedChk" />
-            Show approved
-          </label>
-
-          <button class="secondary" id="filterBtn">Refresh</button>
-          <button class="secondary" id="reportBtn">Report not submitted</button>
-          <button class="secondary" id="checklistBtn">Checklist report</button>
-          <button class="danger" id="cleanupBtn">Cleanup &gt; 7 days (manual)</button>
+      </summary>
+      <div class="section-body">
+        
+        <div class="actions" style="margin-bottom:10px;">
+          <button class="secondary" id="refreshPointsBtn">Refresh Points</button>
         </div>
-      </div>
-
-      <div class="hr"></div>
-      <h3 style="margin:0 0 10px 0;">Daily Submissions</h3>
-      <div class="small">Approve/Reject ได้เลย และลบด้วย PIN ผู้จัดการ</div>
-      <div class="table-wrap" style="margin-top:10px;"><table class="table table-sub">
-        <thead>
-          <tr>
-            <th>Photo</th>
-            <th>Staff</th>
-            <th>Task</th>
-            <th>Dept</th>
-            <th>Status</th>
-            <th>Date</th>
-            <th>Actions</th>
-</tr>
-        </thead>
-        <tbody id="subRows"></tbody>
-      </table></div>
-    </div>
-
-    <div class="card" style="margin-top:14px;">
-      <h3 style="margin:0 0 10px 0;">Report: Who hasn't submitted?</h3>
-      <div class="small">นิยาม: “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” แต่ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก</div>
-      <div class="table-wrap" style="margin-top:10px;"><table class="table table-report">
-        <thead>
-          <tr>
-            <th>Staff ID</th>
-            <th>Name</th>
-            <th>Position</th>
-            <th>Department</th>
-            <th>Submitted</th>
-            <th>Missing</th>
-          </tr>
-        </thead>
-        <tbody id="reportRows"></tbody>
-      </table></div>
-      <div class="hint">ถ้าต้องการให้เป็น “ยังไม่ส่งเลยแม้แต่งานเดียว” บอกฉันได้ เดี๋ยวปรับนิยามให้</div>
-    </div>
-
-    
-    <div class="card" style="margin-top:14px;">
-      <div class="row" style="align-items:flex-end;">
-        <div>
-          <h3 style="margin:0 0 6px 0;">Staff Points</h3>
-          <div class="small">คะแนนสะสมจะเพิ่ม +1 เมื่อ Manager กด Approve (ให้คะแนนครั้งเดียวต่อ submission)</div>
         </div>
         <div class="actions" style="flex:0;">
           <button class="secondary" id="refreshPointsBtn">Refresh Points</button>
@@ -116,14 +68,12 @@
         <tbody id="pointsRows"></tbody>
       </table></div>
       <div class="hint">Tip: คะแนนถูกเก็บใน Firestore ที่ <code>staff/{uid}.points</code></div>
-    </div>
+    
+      </div>
+    </details>
 
 <div class="grid two" style="margin-top:14px;">
-      <div class="card">
-        <h3 style="margin:0 0 10px 0;">Create Staff Account</h3>
-        <div class="small">สร้างบัญชีพนักงาน (Email/Password) + โปรไฟล์ใน Firestore</div>
-
-        <label>Staff ID</label>
+<label>Staff ID</label>
         <input id="newStaffID" placeholder="เช่น AROON01" />
 
         <label>Password</label>
@@ -157,8 +107,16 @@
       </div>
 
       <div class="card">
-        <h3 style="margin:0 0 10px 0;">Create Task (Side Job)</h3>
-        <div class="small">กำหนดงานให้ “ทุกคน / แผนก / คนเดียว”</div>
+        <div class="row" style="align-items:flex-end;">
+          <div>
+            <h3 style="margin:0 0 6px 0;">Create Task (Side Job)</h3>
+            <div class="small">กำหนดงานให้ “ทุกคน / แผนก / คนเดียว”</div>
+          </div>
+          <div class="actions" style="flex:0;">
+            <button id="createTaskBtn">Create Task</button>
+            <button class="secondary" id="copyYesterdayAllBtn">Copy yesterday → Task date</button>
+          </div>
+        </div>
 
         <label>Task title</label>
         <input id="taskTitle" placeholder="เช่น Clean Coffee Machine" />
@@ -167,6 +125,17 @@
         <textarea id="taskDescription" placeholder="รายละเอียด/มาตรฐานงานที่ต้องการให้เห็นในรูป"></textarea>
 
         <div class="grid two">
+          <div>
+            <label>Task date</label>
+            <input id="taskDate" type="date" />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <div class="small">ใช้สำหรับงานรายวัน + ปุ่ม Copy yesterday</div>
+          </div>
+        </div>
+
+<div class="grid two">
           <div>
             <label>Department</label>
             <input id="taskDept" placeholder="Mangrove / The Taste / HK" />
@@ -192,19 +161,22 @@
           <label>Assigned to (Staff ID)</label>
           <input id="assignedTo" placeholder="เช่น AROON01" />
         </div>
-
-        <div class="actions" style="margin-top:10px;">
-          <button id="createTaskBtn">Create Task</button>
-        </div>
-
-        <div class="hint">Assign mode = Department จะใช้กับพนักงานที่มี department ตรงกันใน profile</div>
+<div class="hint">Assign mode = Department จะใช้กับพนักงานที่มี department ตรงกันใน profile</div>
       </div>
     </div>
 
-    <div class="card" style="margin-top:14px;">
-      <h3 style="margin:0 0 10px 0;">Task List</h3>
-      <div class="small">เปิด/ปิดงาน, แก้ไข, ลบ (ต้องใช้ PIN)</div>
-      <div class="table-wrap" style="margin-top:10px;"><table class="table table-tasklist">
+    <details class="card" style="margin-top:14px;" id="taskListSection">
+      <summary>
+        <div class="summary-row">
+          <div class="summary-title">
+            <h3 style="margin:0 0 6px 0;">Task List</h3>
+            <div class="small">เปิด/ปิดงาน, แก้ไข, ลบ (ต้องใช้ PIN)</div>
+          </div>
+          <div class="summary-indicator">Show / Hide</div>
+        </div>
+      </summary>
+      <div class="section-body">
+        <div class="table-wrap" style="margin-top:10px;"><table class="table table-tasklist">
         <thead>
           <tr>
             <th>Task</th>
@@ -217,7 +189,8 @@
         </thead>
         <tbody id="taskRows"></tbody>
       </table></div>
-    </div>
+      </div>
+    </details>
 
     <div class="footer">Laya Staff Task — Manager Console (v3).</div>
   </div>
