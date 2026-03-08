@@ -191,11 +191,3 @@ Deploy:
   2) K.Noi
   3) K.Parawee
   4) K.Joy
-
-
----
-
-## ✅ Remove Create Staff + Copy yesterday assignment
-- เอาเมนู Create Staff Account ออกจากหน้า Manager
-- เพิ่มปุ่ม `Copy yesterday → Task date` เพื่อคัดลอกงานรายวันของเมื่อวานมาเป็นของวันที่เลือก (คง assignedTo เดิม)
-- งานรายวันใช้ field `forDate` (Task date)
