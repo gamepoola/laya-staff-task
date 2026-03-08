@@ -191,9 +191,3 @@ Deploy:
   2) K.Noi
   3) K.Parawee
   4) K.Joy
-
-
----
-
-## ✅ Staff Points toggle
-หน้า Manager Console เพิ่มปุ่ม `Show points / Hide points` เพื่อซ่อนตารางคะแนน (ลดความรก) และจะโหลดคะแนนเฉพาะตอนเปิดดู

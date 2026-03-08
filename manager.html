@@ -71,18 +71,11 @@
         </thead>
         <tbody id="subRows"></tbody>
       </table>
+    </div>
 
     <div class="card" style="margin-top:14px;">
-      <div class="row" style="align-items:flex-end;">
-        <div>
-          <h3 style="margin:0 0 6px 0;">Report: Who hasn't submitted?</h3>
-          <div class="small">นิยาม: “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” แต่ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก</div>
-        </div>
-        <div class="actions" style="flex:0;">
-          <button class="secondary" id="toggleReportBtn">Show report</button>
-        </div>
-      </div>
-      <div id="reportPanel">
+      <h3 style="margin:0 0 10px 0;">Report: Who hasn't submitted?</h3>
+      <div class="small">นิยาม: “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” แต่ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก</div>
       <table class="table" style="margin-top:10px;">
         <thead>
           <tr>
@@ -108,10 +101,8 @@
         </div>
         <div class="actions" style="flex:0;">
           <button class="secondary" id="refreshPointsBtn">Refresh Points</button>
-          <button class="secondary" id="togglePointsBtn">Show points</button>
         </div>
       </div>
-      <div id="pointsPanel">
       <table class="table" style="margin-top:10px;">
         <thead>
           <tr>
@@ -126,20 +117,7 @@
       </table>
       <div class="hint">Tip: คะแนนถูกเก็บใน Firestore ที่ <code>staff/{uid}.points</code></div>
     </div>
-    </div>
 
-
-    <div class="card" style="margin-top:14px;">
-      <div class="row" style="align-items:flex-end;">
-        <div>
-          <h3 style="margin:0 0 6px 0;">Management Tools</h3>
-          <div class="small">สร้างบัญชี / สร้างงาน (สามารถซ่อนได้เพื่อลดความรก)</div>
-        </div>
-        <div class="actions" style="flex:0;">
-          <button class="secondary" id="toggleSetupBtn">Hide tools</button>
-        </div>
-      </div>
-      <div id="setupPanel" style="margin-top:10px;">
 <div class="grid two" style="margin-top:14px;">
       <div class="card">
         <h3 style="margin:0 0 10px 0;">Create Staff Account</h3>
@@ -202,7 +180,6 @@
             </select>
           </div>
         </div>
-      </div>
 
         <label>Assign mode</label>
         <select id="assignMode">
@@ -221,9 +198,7 @@
         </div>
 
         <div class="hint">Assign mode = Department จะใช้กับพนักงานที่มี department ตรงกันใน profile</div>
-      
-    </div>
-</div>
+      </div>
     </div>
 
     <div class="card" style="margin-top:14px;">
@@ -242,6 +217,7 @@
         </thead>
         <tbody id="taskRows"></tbody>
       </table>
+    </div>
 
     <div class="footer">Laya Staff Task — Manager Console (v3).</div>
   </div>

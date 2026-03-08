@@ -27,25 +27,13 @@ async function loadManagerPage(){
   el("createTaskBtn").onclick = createTask;
   el("assignMode").onchange = onAssignModeChange;
   el("reportBtn").onclick = loadNotSubmittedReport;
-  if (el("toggleReportBtn")) el("toggleReportBtn").onclick = toggleReportPanel;
-  if (el("toggleSetupBtn")) el("toggleSetupBtn").onclick = toggleSetupPanel;
-  // default collapse: report + points
-  if (el("reportPanel")) el("reportPanel").style.display = "none";
-  if (el("toggleReportBtn")) el("toggleReportBtn").textContent = "Show report";
-  if (el("pointsPanel")) el("pointsPanel").style.display = "none";
-  if (el("togglePointsBtn")) el("togglePointsBtn").textContent = "Show points";
   if (el("checklistBtn")) el("checklistBtn").onclick = () => window.location.href = "checklist.html";
   if (el("refreshPointsBtn")) el("refreshPointsBtn").onclick = loadStaffPoints;
-  if (el("togglePointsBtn")) el("togglePointsBtn").onclick = togglePointsPanel;
-  // default: hide points list (too long)
-  if (el("pointsPanel")) el("pointsPanel").style.display = "none";
-  if (el("togglePointsBtn")) el("togglePointsBtn").textContent = "Show points";
 
   await loadSubmissions();
   await loadTaskList();
   await loadNotSubmittedReport();
-  // points list loads only when expanded
-  // await loadStaffPoints();
+  await loadStaffPoints();
 }
 
 async function loadKpi(date){
@@ -188,8 +176,7 @@ async function setStatus(id, status){
     toast("อัปเดตสถานะแล้ว ✅");
     await loadSubmissions();
     await loadNotSubmittedReport();
-    // points list loads only when expanded
-  // await loadStaffPoints();
+    await loadStaffPoints();
   }catch(e){
     console.error(e);
     toast("อัปเดตไม่สำเร็จ: " + (e?.message||e), "danger");
@@ -465,8 +452,7 @@ async function toggleTask(id, to){
   toast("อัปเดตงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
-  // points list loads only when expanded
-  // await loadStaffPoints();
+  await loadStaffPoints();
 }
 
 async function editTask(id){
@@ -481,8 +467,7 @@ async function editTask(id){
   toast("แก้ไขงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
-  // points list loads only when expanded
-  // await loadStaffPoints();
+  await loadStaffPoints();
 }
 
 async function deleteTask(id){
@@ -494,8 +479,7 @@ async function deleteTask(id){
   toast("ลบงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
-  // points list loads only when expanded
-  // await loadStaffPoints();
+  await loadStaffPoints();
 }
 
 function onAssignModeChange(){
@@ -605,53 +589,5 @@ async function loadStaffPoints(){
     console.error(e);
     body.innerHTML = "<tr><td colspan='5' class='small'>โหลดคะแนนไม่สำเร็จ</td></tr>";
     toast("โหลดคะแนนไม่สำเร็จ: " + (e?.message||e), "danger");
-  }
-}
-
-
-function togglePointsPanel(){
-  const panel = el("pointsPanel");
-  const btn = el("togglePointsBtn");
-  if(!panel || !btn) return;
-
-  const hidden = panel.style.display === "none" || panel.style.display === "";
-  if(hidden){
-    panel.style.display = "block";
-    btn.textContent = "Hide points";
-    loadStaffPoints();
-  }else{
-    panel.style.display = "none";
-    btn.textContent = "Show points";
-  }
-}
-
-
-function toggleReportPanel(){
-  const panel = el("reportPanel");
-  const btn = el("toggleReportBtn");
-  if(!panel || !btn) return;
-
-  const hidden = panel.style.display === "none" || panel.style.display === "";
-  if(hidden){
-    panel.style.display = "block";
-    btn.textContent = "Hide report";
-  }else{
-    panel.style.display = "none";
-    btn.textContent = "Show report";
-  }
-}
-
-function toggleSetupPanel(){
-  const panel = el("setupPanel");
-  const btn = el("toggleSetupBtn");
-  if(!panel || !btn) return;
-
-  const hidden = panel.style.display === "none";
-  if(hidden){
-    panel.style.display = "block";
-    btn.textContent = "Hide tools";
-  }else{
-    panel.style.display = "none";
-    btn.textContent = "Show tools";
   }
 }
