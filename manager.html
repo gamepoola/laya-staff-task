@@ -76,7 +76,8 @@
     <div class="card" style="margin-top:14px;">
       <h3 style="margin:0 0 10px 0;">Report: Who hasn't submitted?</h3>
       <div class="small">นิยาม: “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” แต่ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก</div>
-      <div class="table-wrap" style="margin-top:10px;"><table class="table table-report">
+	<button onclick="toggleBox('box1', this)" class="secondary">Show</button>
+      <div id="box1" style="display:none;" class="table-wrap" style="margin-top:10px;"><table class="table table-report">
         <thead>
           <tr>
             <th>Staff ID</th>
@@ -98,12 +99,13 @@
         <div>
           <h3 style="margin:0 0 6px 0;">Staff Points</h3>
           <div class="small">คะแนนสะสมจะเพิ่ม +1 เมื่อ Manager กด Approve (ให้คะแนนครั้งเดียวต่อ submission)</div>
+		<button onclick="toggleBox('box2', this)" class="secondary">Show</button>
         </div>
         <div class="actions" style="flex:0;">
           <button class="secondary" id="refreshPointsBtn">Refresh Points</button>
         </div>
       </div>
-      <div class="table-wrap" style="margin-top:10px;"><table class="table table-points">
+      <div id="box2" style="display:none;" class="table-wrap" style="margin-top:10px;"><table class="table table-points">
         <thead>
           <tr>
             <th>Staff ID</th>
@@ -215,7 +217,8 @@
     <div class="card" style="margin-top:14px;">
       <h3 style="margin:0 0 10px 0;">Task List</h3>
       <div class="small">เปิด/ปิดงาน, แก้ไข, ลบ (ต้องใช้ PIN)</div>
-      <div class="table-wrap" style="margin-top:10px;"><table class="table table-tasklist">
+	<button onclick="toggleBox('box3', this)" class="secondary">Show</button>
+      <div id="box3" style="display:none;" class="table-wrap" style="margin-top:10px;"><table class="table table-tasklist">
         <thead>
           <tr>
             <th>Task</th>
@@ -232,6 +235,15 @@
 
     <div class="footer">Laya Staff Task — Manager Console (v3).</div>
   </div>
+
+<script>
+function toggleBox(boxId, btn){
+  const el = document.getElementById(boxId);
+  const isHidden = (el.style.display === "none");
+  el.style.display = isHidden ? "block" : "none";
+  if (btn) btn.textContent = isHidden ? "Hide" : "Show";
+}
+</script>
 
 <script src="js/firebase-config.js"></script>
 <script src="js/firebase-init.js"></script>
