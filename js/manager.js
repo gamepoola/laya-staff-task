@@ -53,6 +53,7 @@ async function loadTaskTitlePick(){
   const dept = (el("taskDept") && el("taskDept").value) ? el("taskDept").value.trim() : "";
   const date = pickDateForTasks();
 
+  // find used titles for this date (and dept if provided)
   const used = new Set();
   try {
     const snap = await db().collection("tasks")
@@ -73,8 +74,8 @@ async function loadTaskTitlePick(){
   const current = sel.value;
   sel.innerHTML = '<option value="">— Select task title —</option>';
 
-  for (const title of TASK_TITLE_LIBRARY) {
-    if (used.has(title)) continue;
+  for(const title of TASK_TITLE_LIBRARY) {
+    if (used.has(title)) continue; // hide already assigned for the day
     sel.insertAdjacentHTML("beforeend", `<option value="${escapeHtml(title)}">${escapeHtml(title)}</option>`);
   }
 
@@ -104,20 +105,18 @@ async function loadManagerPage(){
   el("mgrDept").textContent = profile?.department || "-";
 
   el("filterDate").value = todayStr();
+  bindTaskTitlePick();
+  await loadTaskTitlePick();
   if (el("showApprovedChk")) {
     el("showApprovedChk").checked = false; // default: hide approved
     el("showApprovedChk").addEventListener("change", async () => {
-      bindTaskTitlePick();
-  await loadTaskTitlePick();
-
-  await loadSubmissions();
+      await loadSubmissions();
     });
   }
-  el("filterBtn").onclick = async ()=>{
-    bindTaskTitlePick();
-  await loadTaskTitlePick();
+  el("filterDate").addEventListener("change", async ()=>{ await loadTaskTitlePick(); });
 
-  await loadSubmissions();
+  el("filterBtn").onclick = async ()=>{
+    await loadSubmissions();
     await loadNotSubmittedReport();
   };
   el("cleanupBtn").onclick = cleanupOld;
@@ -127,9 +126,6 @@ async function loadManagerPage(){
   el("reportBtn").onclick = loadNotSubmittedReport;
   if (el("checklistBtn")) el("checklistBtn").onclick = () => window.location.href = "checklist.html";
   if (el("refreshPointsBtn")) el("refreshPointsBtn").onclick = loadStaffPoints;
-
-  bindTaskTitlePick();
-  await loadTaskTitlePick();
 
   await loadSubmissions();
   await loadTaskList();
@@ -275,10 +271,7 @@ async function setStatus(id, status){
     });
 
     toast("อัปเดตสถานะแล้ว ✅");
-    bindTaskTitlePick();
-  await loadTaskTitlePick();
-
-  await loadSubmissions();
+    await loadSubmissions();
     await loadNotSubmittedReport();
     await loadStaffPoints();
   }catch(e){
@@ -305,10 +298,7 @@ async function deleteSubmission(id){
     }
     await ref.delete();
     toast("ลบแล้ว ✅");
-    bindTaskTitlePick();
-  await loadTaskTitlePick();
-
-  await loadSubmissions();
+    await loadSubmissions();
     await loadNotSubmittedReport();
   }catch(e){
     console.error(e);
@@ -349,10 +339,7 @@ async function cleanupOld(){
       n++;
     }
     toast(`Cleanup สำเร็จ: ลบ ${n} รายการ ✅`);
-    bindTaskTitlePick();
-  await loadTaskTitlePick();
-
-  await loadSubmissions();
+    await loadSubmissions();
     await loadNotSubmittedReport();
   }catch(e){
     console.error(e);
@@ -494,6 +481,7 @@ async function createTask(){
 
     await normalizeTaskAssignment(docRef.id);
     toast("สร้างงานแล้ว ✅");
+    await loadTaskTitlePick();
     await loadTaskList();
     await loadNotSubmittedReport();
   }catch(e){
