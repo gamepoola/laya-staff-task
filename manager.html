@@ -75,9 +75,8 @@
 
     <div class="card" style="margin-top:14px;">
       <h3 style="margin:0 0 10px 0;">Report: Who hasn't submitted?</h3>
-      <div class="small">นิยาม: “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” แต่ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก</div>	
-	<button onclick="toggleBox('box1', this)">Show</button>
-      <div id="box1" style="display:none;" class="table-wrap" style="margin-top:10px;"><table class="table table-report">
+      <div class="small">นิยาม: “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” แต่ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก</div>
+      <div class="table-wrap" style="margin-top:10px;"><table class="table table-report">
         <thead>
           <tr>
             <th>Staff ID</th>
@@ -90,22 +89,21 @@
         </thead>
         <tbody id="reportRows"></tbody>
       </table></div>
-
+      <div class="hint">ถ้าต้องการให้เป็น “ยังไม่ส่งเลยแม้แต่งานเดียว” บอกฉันได้ เดี๋ยวปรับนิยามให้</div>
     </div>
 
     
     <div class="card" style="margin-top:14px;">
       <div class="row" style="align-items:flex-end;">
         <div>
-          <h3 style="margin:0 0 6px 0;">Staff Points</h3>      
-	<div class="small">นิยาม: “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” แต่ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก</div>
-	<button onclick="toggleBox('box2', this)">Show</button>
+          <h3 style="margin:0 0 6px 0;">Staff Points</h3>
+          <div class="small">คะแนนสะสมจะเพิ่ม +1 เมื่อ Manager กด Approve (ให้คะแนนครั้งเดียวต่อ submission)</div>
         </div>
         <div class="actions" style="flex:0;">
-
+          <button class="secondary" id="refreshPointsBtn">Refresh Points</button>
         </div>
       </div>
-      <div id="box2" style="display:none;" class="table-wrap" style="margin-top:10px;"><table class="table table-points">
+      <div class="table-wrap" style="margin-top:10px;"><table class="table table-points">
         <thead>
           <tr>
             <th>Staff ID</th>
@@ -117,13 +115,13 @@
         </thead>
         <tbody id="pointsRows"></tbody>
       </table></div>
-
+      <div class="hint">Tip: คะแนนถูกเก็บใน Firestore ที่ <code>staff/{uid}.points</code></div>
     </div>
 
 <div class="grid two" style="margin-top:14px;">
       <div class="card">
         <h3 style="margin:0 0 10px 0;">Create Staff Account</h3>
-        <div class="small"></div>
+        <div class="small">สร้างบัญชีพนักงาน (Email/Password) + โปรไฟล์ใน Firestore</div>
 
         <label>Staff ID</label>
         <input id="newStaffID" placeholder="เช่น AROON01" />
@@ -162,7 +160,18 @@
         <h3 style="margin:0 0 10px 0;">Create Task (Side Job)</h3>
         <div class="small">กำหนดงานให้ “ทุกคน / แผนก / คนเดียว”</div>
 
-        <label>Task title</label>
+        <div class="row" style="align-items:flex-end;">
+          <div style="flex:1;">
+            <label>Task title</label>
+            <select id="taskTitlePick">
+              <option value="">— Select task title —</option>
+            </select>
+          </div>
+          <div class="actions" style="flex:0;">
+            <button class="secondary" id="refreshTitlePickBtn">Refresh list</button>
+          </div>
+        </div>
+        <div class="small">เลือกจากรายการด้านบน (รายการที่ถูกมอบหมายแล้วของ “วันที่เลือก” จะถูกซ่อน) หรือพิมพ์เองได้</div>
         <input id="taskTitle" placeholder="เช่น Clean Coffee Machine" />
 
         <label>Description</label>
@@ -206,8 +215,7 @@
     <div class="card" style="margin-top:14px;">
       <h3 style="margin:0 0 10px 0;">Task List</h3>
       <div class="small">เปิด/ปิดงาน, แก้ไข, ลบ (ต้องใช้ PIN)</div>
-	<button onclick="toggleBox('box3', this)">Show</button>
-      <div id="box3" style="display:none;" class="table-wrap" style="margin-top:10px;"><table class="table table-tasklist">
+      <div class="table-wrap" style="margin-top:10px;"><table class="table table-tasklist">
         <thead>
           <tr>
             <th>Task</th>
@@ -224,17 +232,6 @@
 
     <div class="footer">Laya Staff Task — Manager Console (v3).</div>
   </div>
-
-
-<script>
-function toggleBox(boxId, btn){
-  const el = document.getElementById(boxId);
-  const isHidden = (el.style.display === "none");
-  el.style.display = isHidden ? "block" : "none";
-  if (btn) btn.textContent = isHidden ? "Hide" : "Show";
-}
-</script>
-
 
 <script src="js/firebase-config.js"></script>
 <script src="js/firebase-init.js"></script>

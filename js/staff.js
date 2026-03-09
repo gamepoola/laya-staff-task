@@ -40,7 +40,10 @@ async function renderTasks(uid, dept){
     uniq.push(t);
   }
 
-  if(!uniq.length){
+  const today = todayStr();
+  const filtered = uniq.filter(t => !t.forDate || t.forDate === today);
+
+  if(!filtered.length){
     body.innerHTML = "<tr><td colspan='5' class='small'>วันนี้ยังไม่มีงานที่ถูกมอบหมาย</td></tr>";
     return;
   }
@@ -55,7 +58,7 @@ async function renderTasks(uid, dept){
   subSnap.forEach(d=> statusByTask.set(d.data().taskId, d.data().status || "waiting"));
 
   body.innerHTML = "";
-  for(const t of uniq){
+  for(const t of filtered){
     const st = statusByTask.get(t.id);
     const action = st ? statusBadge(st) : `<button class="success" onclick="goUpload('${t.id}')">ส่งงาน</button>`;
 

@@ -1,3 +1,95 @@
+
+const TASK_TITLE_LIBRARY = [
+  "Take careMenu & Drink List",
+  "Prepare & Change Astray",
+  "Sofa Area / Station Host / Outside",
+  "Prepare Station Service",
+  "Prepare Cutlery",
+  "Salt & Pepper Shaker",
+  "Prepare Set Up Nipkin",
+  "Glass Were (Water)",
+  "Tissue Glass & Thoothspick",
+  "Clean Table & Chair",
+  "Pocket Spoon Buffet Line",
+  "Prepare Food Runner",
+  "Prepare Coffee Mug & Spoon",
+  "Clean Salt & Pepper Shaker",
+  "Prepare Tissue & Toothpick",
+  "Prepare Pocket Spoon",
+  "Clean Baby Chairs",
+  "Check Cushion / Pillow",
+  "Refill Sugar Bowl",
+  "Lay Out Tables & Chairs",
+  "Clean Back Area",
+  "Clean Tidy Station Service",
+  "Clean Cutlery",
+  "Clean & Tidy FB Storage Room",
+  "Counting Nipkin & Record",
+  "Clean Table Cloth",
+  "Clean Bin & Clean Station Clear",
+  "Clean Tidy Jack Tray & Troley",
+  "Clean Coffee Machine Station",
+  "Prepare Cutlery Breakfast",
+  "Set up Coffee & Tea Station",
+  "Folding Tissue Nipkin",
+  "Clean Trays & Trolleys",
+  "Clear Bin & Clean Station",
+  "Carry Pot Coffee & Thermos",
+  "Clean Coffee Machine",
+  "Clean Station Coffee",
+  "Clean Tables & Chairs"
+];
+
+function pickDateForTasks(){
+  const fd = el("filterDate");
+  if (fd && fd.value) return fd.value;
+  return todayStr();
+}
+
+async function loadTaskTitlePick(){
+  const sel = el("taskTitlePick");
+  if(!sel) return;
+
+  const dept = (el("taskDept") && el("taskDept").value) ? el("taskDept").value.trim() : "";
+  const date = pickDateForTasks();
+
+  const used = new Set();
+  try {
+    const snap = await db().collection("tasks")
+      .where("forDate","==",date)
+      .limit(2000)
+      .get();
+
+    snap.docs.forEach(d=>{
+      const t = d.data() || {};
+      if (t.active === false) return;
+      if (dept && t.department && String(t.department) !== String(dept)) return;
+      if (t.title) used.add(String(t.title));
+    });
+  } catch(e) {
+    console.warn("loadTaskTitlePick query failed:", e);
+  }
+
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— Select task title —</option>';
+
+  for (const title of TASK_TITLE_LIBRARY) {
+    if (used.has(title)) continue;
+    sel.insertAdjacentHTML("beforeend", `<option value="${escapeHtml(title)}">${escapeHtml(title)}</option>`);
+  }
+
+  if (current) sel.value = current;
+}
+
+function bindTaskTitlePick(){
+  const sel = el("taskTitlePick");
+  if(!sel) return;
+  sel.addEventListener("change", ()=>{
+    if(sel.value && el("taskTitle")) el("taskTitle").value = sel.value;
+  });
+  if (el("refreshTitlePickBtn")) el("refreshTitlePickBtn").onclick = loadTaskTitlePick;
+}
+
 async function loadManagerPage(){
   const user = await requireAuth();
   const profile = await getProfile(user.uid);
@@ -15,11 +107,17 @@ async function loadManagerPage(){
   if (el("showApprovedChk")) {
     el("showApprovedChk").checked = false; // default: hide approved
     el("showApprovedChk").addEventListener("change", async () => {
-      await loadSubmissions();
+      bindTaskTitlePick();
+  await loadTaskTitlePick();
+
+  await loadSubmissions();
     });
   }
   el("filterBtn").onclick = async ()=>{
-    await loadSubmissions();
+    bindTaskTitlePick();
+  await loadTaskTitlePick();
+
+  await loadSubmissions();
     await loadNotSubmittedReport();
   };
   el("cleanupBtn").onclick = cleanupOld;
@@ -29,6 +127,9 @@ async function loadManagerPage(){
   el("reportBtn").onclick = loadNotSubmittedReport;
   if (el("checklistBtn")) el("checklistBtn").onclick = () => window.location.href = "checklist.html";
   if (el("refreshPointsBtn")) el("refreshPointsBtn").onclick = loadStaffPoints;
+
+  bindTaskTitlePick();
+  await loadTaskTitlePick();
 
   await loadSubmissions();
   await loadTaskList();
@@ -174,7 +275,10 @@ async function setStatus(id, status){
     });
 
     toast("อัปเดตสถานะแล้ว ✅");
-    await loadSubmissions();
+    bindTaskTitlePick();
+  await loadTaskTitlePick();
+
+  await loadSubmissions();
     await loadNotSubmittedReport();
     await loadStaffPoints();
   }catch(e){
@@ -201,7 +305,10 @@ async function deleteSubmission(id){
     }
     await ref.delete();
     toast("ลบแล้ว ✅");
-    await loadSubmissions();
+    bindTaskTitlePick();
+  await loadTaskTitlePick();
+
+  await loadSubmissions();
     await loadNotSubmittedReport();
   }catch(e){
     console.error(e);
@@ -242,7 +349,10 @@ async function cleanupOld(){
       n++;
     }
     toast(`Cleanup สำเร็จ: ลบ ${n} รายการ ✅`);
-    await loadSubmissions();
+    bindTaskTitlePick();
+  await loadTaskTitlePick();
+
+  await loadSubmissions();
     await loadNotSubmittedReport();
   }catch(e){
     console.error(e);
@@ -366,11 +476,15 @@ async function createTask(){
 
   try{
     // If Firestore rules deny, we will show the real error instead of silently failing.
+    const forDate = pickDateForTasks();
+
     const docRef = await db().collection("tasks").add({
       title, description, department, priority,
       assignedTo,
+      forDate,
       active: true,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
     el("taskTitle").value="";
