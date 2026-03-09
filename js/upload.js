@@ -6,7 +6,16 @@ async function loadUploadPage(){
     toast("ไม่พบ taskId", "danger");
     window.location.href="staff.html";
     return;
+  
+  // show selected file count
+  const photoInput = el("photo");
+  if (photoInput && el("fileCount")) {
+    photoInput.addEventListener("change", () => {
+      const n = photoInput.files ? photoInput.files.length : 0;
+      el("fileCount").textContent = n ? `Selected: ${n} photo(s)` : "";
+    });
   }
+}
 
   const taskSnap = await db().collection("tasks").doc(taskId).get();
   if(!taskSnap.exists){
@@ -127,40 +136,61 @@ async function submitWork(){
   const user = await requireAuth();
   const profile = await getProfile(user.uid);
   const taskId = qs("taskId");
-  const file = el("photo").files[0];
+  const files = Array.from(el("photo").files || []);
 
-  if(!file){
+  if(!files.length){
     toast("กรุณาเลือกรูปก่อนส่งงาน", "danger");
     return;
   }
 
-  const nameLower = (file.name || "").toLowerCase();
-  if (nameLower.endsWith(".heic") || nameLower.endsWith(".heif")) {
-    toast("ไฟล์เป็น HEIC/HEIF: ถ้าอัปโหลดไม่ได้ ให้ตั้งกล้อง iPhone เป็น 'Most Compatible (JPEG)'", "danger");
+  // safety limit
+  if (files.length > 10) {
+    toast("เลือกได้สูงสุด 10 รูปต่อครั้ง", "danger");
+    return;
+  }
+
+  // HEIC hint
+  const hasHeic = files.some(f => (f.name||"").toLowerCase().endsWith(".heic") || (f.name||"").toLowerCase().endsWith(".heif"));
+  if (hasHeic) {
+    toast("มีไฟล์ HEIC/HEIF: ถ้าอัปโหลดไม่ได้ ให้ตั้งกล้อง iPhone เป็น 'Most Compatible (JPEG)'", "danger");
   }
 
   try{
     el("submitBtn").disabled = true;
-    el("submitBtn").textContent = "กำลังบีบอัดรูป...";
-
-    const compressedBlob = await compressImageToJpeg(file, { targetMB: 2, maxDim: 1600 });
-
-    const beforeMB = (file.size/1024/1024).toFixed(2);
-    const afterMB = (compressedBlob.size/1024/1024).toFixed(2);
-    toast(`บีบอัดแล้ว: ${beforeMB} → ${afterMB} MB`, "info");
-
-    el("submitBtn").textContent = "กำลังอัปโหลด...";
 
     const today = todayStr();
     const ts = Date.now();
 
-    const safeBase = (file.name || "photo").replaceAll(/[^a-zA-Z0-9._-]/g,"_").replace(/\.(heic|heif|png|jpg|jpeg|webp)$/i,"");
-    const outName = `${safeBase || "photo"}_${ts}.jpg`;
-    const path = `submissions/${today}/${user.uid}/${taskId}/${outName}`;
+    const photoPaths = [];
+    const photoURLs = [];
+    const originalSizesBytes = [];
+    const uploadedSizesBytes = [];
 
-    const ref = storage().ref().child(path);
-    await ref.put(compressedBlob);
-    const url = await ref.getDownloadURL();
+    for(let i=0;i<files.length;i++){
+      const file = files[i];
+      originalSizesBytes.push(file.size);
+
+      el("submitBtn").textContent = `Compressing ${i+1}/${files.length}...`;
+      const compressedBlob = await compressImageToJpeg(file, { targetMB: 2, maxDim: 1600 });
+      uploadedSizesBytes.push(compressedBlob.size);
+
+      el("submitBtn").textContent = `Uploading ${i+1}/${files.length}...`;
+
+      const safeBase = (file.name || "photo")
+        .replaceAll(/[^a-zA-Z0-9._-]/g,"_")
+        .replace(/\.(heic|heif|png|jpg|jpeg|webp)$/i,"");
+      const outName = `${safeBase || "photo"}_${ts}_${i+1}.jpg`;
+      const path = `submissions/${today}/${user.uid}/${taskId}/${outName}`;
+
+      const ref = storage().ref().child(path);
+      await ref.put(compressedBlob);
+      const url = await ref.getDownloadURL();
+
+      photoPaths.push(path);
+      photoURLs.push(url);
+    }
+
+    el("submitBtn").textContent = "Saving...";
 
     await db().collection("submissions").add({
       taskId,
@@ -169,15 +199,27 @@ async function submitWork(){
       staffName: profile?.name || "",
       department: profile?.department || "",
       date: today,
-      photoPath: path,
-      photoURL: url,
+
+      // NEW: multiple photos
+      photoPaths,
+      photoURLs,
+      photosCount: photoURLs.length,
+
+      // Backward compatible (first photo)
+      photoPath: photoPaths[0] || "",
+      photoURL: photoURLs[0] || "",
+
       status: "waiting",
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      originalSizeBytes: file.size,
-      uploadedSizeBytes: compressedBlob.size
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+
+      originalSizesBytes,
+      uploadedSizesBytes,
+      originalTotalBytes: originalSizesBytes.reduce((a,b)=>a+b,0),
+      uploadedTotalBytes: uploadedSizesBytes.reduce((a,b)=>a+b,0)
     });
 
-    toast("ส่งงานสำเร็จ ✅", "info");
+    toast(`ส่งงานสำเร็จ ✅ (${photoURLs.length} รูป)` , "info");
     setTimeout(()=> window.location.href="staff.html", 800);
   }catch(e){
     console.error(e);
@@ -186,3 +228,4 @@ async function submitWork(){
     el("submitBtn").textContent = "Submit";
   }
 }
+

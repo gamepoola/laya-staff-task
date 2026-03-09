@@ -1,4 +1,21 @@
 
+function openGallery(encoded){
+  try{
+    const urls = JSON.parse(decodeURIComponent(encoded));
+    const w = window.open("", "_blank");
+    if(!w) return;
+    w.document.title = "Submission photos";
+    w.document.body.style.fontFamily = "system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    w.document.body.style.padding = "16px";
+    w.document.body.innerHTML = `<h2 style="margin:0 0 12px 0;">Photos (${urls.length})</h2>` +
+      urls.map(u => `<div style="margin:0 0 12px 0;"><a href="${u}" target="_blank">${u}</a><br/><img src="${u}" style="max-width:100%; border-radius:12px; margin-top:6px;"/></div>`).join("");
+  }catch(e){
+    console.error(e);
+    alert("Open gallery failed");
+  }
+}
+
+
 const TASK_TITLE_LIBRARY = [
   "Take careMenu & Drink List",
   "Prepare & Change Astray",
@@ -218,8 +235,16 @@ async function loadSubmissions(){
     if (!showApproved && st === "approved") {
       return; // hide approved rows
     }
-    const thumb = s.photoURL
-      ? `<a href="${s.photoURL}" target="_blank"><img class="thumb" src="${s.photoURL}" alt="photo"/></a>`
+    const urls = Array.isArray(s.photoURLs) && s.photoURLs.length ? s.photoURLs : (s.photoURL ? [s.photoURL] : []);
+    const thumb = urls.length
+      ? (() => {
+          const first = urls[0];
+          const encoded = encodeURIComponent(JSON.stringify(urls));
+          const more = urls.length > 1
+            ? `<div class="small"><a href="#" onclick="openGallery('${encoded}'); return false;">All (${urls.length})</a></div>`
+            : "";
+          return `<a href="${first}" target="_blank"><img class="thumb" src="${first}" alt="photo"/></a>${more}`;
+        })()
       : "-";
 
     body.insertAdjacentHTML("beforeend", `

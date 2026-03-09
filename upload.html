@@ -35,7 +35,8 @@
         <h3 style="margin:0 0 8px 0;">Upload Photo</h3>
         <div class="small">ถ่ายจากมือถือ หรือเลือกไฟล์จากเครื่องได้</div>
         <label>เลือกไฟล์รูป</label>
-        <input type="file" id="photo" accept="image/*" />
+        <input type="file" id="photo" accept="image/*" multiple />
+        <div id="fileCount" class="small"></div>
         <div class="actions" style="margin-top:10px;">
           <button id="submitBtn" onclick="submitWork()">Submit</button>
         </div>
