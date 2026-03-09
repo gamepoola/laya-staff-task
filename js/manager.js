@@ -40,6 +40,37 @@ const TASK_TITLE_LIBRARY = [
   "Clean Tables & Chairs"
 ];
 
+/* --- Staff name lookup (AssignedTo label) --- */
+let __staffNameCache = { ts: 0, map: new Map() };
+
+async function getStaffNameMap(){
+  const now = Date.now();
+  // cache 2 minutes
+  if (__staffNameCache.map.size && (now - __staffNameCache.ts) < 120000) return __staffNameCache.map;
+
+  const snap = await db().collection("staff").limit(1000).get();
+  const map = new Map(); // uid -> name
+  snap.forEach(doc => {
+    const s = doc.data() || {};
+    if ((s.role || "staff") === "manager") return;
+    const name = String(s.name || "").trim();
+    if (name) map.set(doc.id, name);
+  });
+
+  __staffNameCache = { ts: now, map };
+  return map;
+}
+
+function assignedToLabel(t, staffNameMap){
+  const a = t.assignedTo;
+  if (a === "all") return "All staff";
+  if (a === "department") return `Dept: ${t.department || "-"}`;
+  if (!a) return "-";
+  return staffNameMap.get(a) || String(a); // fallback uid
+}
+
+
+
 function pickDateForTasks(){
   const fd = el("filterDate");
   if (fd && fd.value) return fd.value;
@@ -524,7 +555,9 @@ async function loadTaskList(){
     return;
   }
 
-  const showApproved = !!(el("showApprovedChk") && el("showApprovedChk").checked);
+  
+  const staffNameMap = await getStaffNameMap();
+const showApproved = !!(el("showApprovedChk") && el("showApprovedChk").checked);
 
   body.innerHTML = "";
   snap.forEach(doc=>{
@@ -535,7 +568,7 @@ async function loadTaskList(){
         <td><b>${escapeHtml(t.title||"-")}</b><div class="small">${escapeHtml(t.description||"")}</div></td>
         <td>${escapeHtml(t.department||"-")}</td>
         <td>${escapeHtml(t.priority||"Normal")}</td>
-        <td class="small">${escapeHtml(String(t.assignedTo||"-"))}</td>
+        <td class="small">${escapeHtml(assignedToLabel(t, staffNameMap))}</td>
         <td>${active}</td>
         <td>
           <div class="row" style="gap:8px;">
