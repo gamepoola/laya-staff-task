@@ -101,3 +101,11 @@ function requireManagerPin(){
   const pin = prompt("กรุณาใส่รหัสผู้จัดการ (PIN) เพื่อดำเนินการต่อ:");
   return pin === (window.__MANAGER_DELETE_PIN__ || "1234");
 }
+
+
+/* PWA service worker */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(console.warn);
+  });
+}
