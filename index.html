@@ -1,82 +1,13 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Laya Operations Hub</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-</head>
-<body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-badge">LAYA</div>
-        <div>
-          <h1>Laya Operations Hub</h1>
-          <p>Smart records for daily operations</p>
-        </div>
-      </div>
-      <nav class="nav-menu" id="navMenu"></nav>
-      <div class="sidebar-footer">
-        <div class="mini-card">
-          <div class="mini-title">Storage</div>
-          <div class="mini-value">Local + Firebase</div>
-        </div>
-        <div class="mini-card">
-          <div class="mini-title">Mode</div>
-          <div class="mini-value">GitHub Pages Ready</div>
-        </div>
-      </div>
-    </aside>
+<!doctype html><html lang='th'><head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="assets/favicon.svg" />
+<title>Laya Staff Task</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#0b1220">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <main class="main-content">
-      <header class="hero">
-        <div class="hero-copy">
-          <div class="eyebrow">Laya Resort Phuket</div>
-          <h2>F&B & Operations Smart Dashboard</h2>
-          <p>
-            รวม 7 ระบบงานไว้ในเว็บเดียว กดเข้าแต่ละโมดูลเพื่อบันทึกข้อมูลจริงได้ทันที
-            โดยหน้า LAYA MEAL PLAN RECORD ถูกทำเป็นเวอร์ชันใช้งานจริง พร้อมเปลี่ยนเดือนได้อิสระ
-            และเชื่อม Firebase เพื่อเก็บข้อมูลได้
-          </p>
-        </div>
-        <div class="hero-actions">
-          <button class="hero-btn primary" data-target="dashboard">หน้าเมนูหลัก</button>
-          <button class="hero-btn" id="exportAllBtn">Export All Data</button>
-        </div>
-      </header>
-
-      <section id="dashboardView" class="view active"></section>
-      <section id="moduleView" class="view"></section>
-    </main>
-  </div>
-
-  <div class="modal hidden" id="firebaseModal">
-    <div class="modal-backdrop" data-close-modal="true"></div>
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>Firebase Settings</h3>
-        <button class="modal-close" data-close-modal="true">×</button>
-      </div>
-      <p class="muted">ตั้งค่า Firebase ของโปรเจกต์ laya-fb หรือแก้เป็นโปรเจกต์อื่นก็ได้ ระบบจะ sync เฉพาะหน้า Meal Plan</p>
-      <form id="firebaseForm" class="firebase-form">
-        <div class="field"><label>apiKey</label><input type="text" name="apiKey" /></div>
-        <div class="field"><label>authDomain</label><input type="text" name="authDomain" /></div>
-        <div class="field"><label>projectId</label><input type="text" name="projectId" /></div>
-        <div class="field"><label>storageBucket</label><input type="text" name="storageBucket" /></div>
-        <div class="field"><label>messagingSenderId</label><input type="text" name="messagingSenderId" /></div>
-        <div class="field"><label>appId</label><input type="text" name="appId" /></div>
-        <div class="field full"><button class="btn primary wide" type="submit">Save & Connect</button></div>
-      </form>
-      <div class="modal-footer-note">Firestore collection: <strong>layaMealPlanMonths</strong> · document id: <strong>YYYY-MM</strong></div>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-</body>
-</html>
+</head><body><script>window.location.href='login.html';</script></body></html>
