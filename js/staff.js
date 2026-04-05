@@ -13,40 +13,43 @@ async function loadStaffPage(){
   el("staffCode").textContent = profile?.staffID || "-";
   el("todayLabel").textContent = todayStr();
 
-  await renderTasks(user.uid, profile?.department || "");
+  await renderTasks(user.uid, profile?.department || "", profile?.staffID || "");
   await loadAllStaffPoints();
 }
 
-async function renderTasks(uid, dept){
+function normalizeText(v){
+  return String(v || "").trim().toLowerCase();
+}
+
+function taskAppliesToToday(task, date){
+  const taskDate = String(task?.forDate || "").trim();
+  return !taskDate || taskDate === String(date || "").trim();
+}
+
+function taskAssignedToCurrentStaff(task, uid, dept, staffID){
+  const assignedTo = String(task?.assignedTo || "").trim();
+  if (!assignedTo) return false;
+  if (assignedTo === "all") return true;
+  if (assignedTo === "department") return normalizeText(task?.department) && normalizeText(task?.department) === normalizeText(dept);
+  return assignedTo === String(uid || "").trim() || assignedTo === String(staffID || "").trim();
+}
+
+async function renderTasks(uid, dept, staffID){
   const body = el("taskRows");
   body.innerHTML = "<tr><td colspan='5' class='small'>กำลังโหลด...</td></tr>";
 
-  const tasks = [];
-  const q1 = await db().collection("tasks").where("active","==",true).where("assignedTo","==",uid).get();
-  q1.forEach(d=> tasks.push({id:d.id, ...d.data()}));
-
-  if(dept){
-    const q2 = await db().collection("tasks").where("active","==",true).where("assignedTo","==","department").where("department","==",dept).get();
-    q2.forEach(d=> tasks.push({id:d.id, ...d.data()}));
-  }
-
-  const q3 = await db().collection("tasks").where("active","==",true).where("assignedTo","==","all").get();
-  q3.forEach(d=> tasks.push({id:d.id, ...d.data()}));
-
-  const seen = new Set();
-  const uniq = [];
-  for(const t of tasks){
-    if(seen.has(t.id)) continue;
-    seen.add(t.id);
-    uniq.push(t);
-  }
+  const today = todayStr();
+  const snap = await db().collection("tasks").where("active","==",true).get();
+  const uniq = snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(t => taskAppliesToToday(t, today))
+    .filter(t => taskAssignedToCurrentStaff(t, uid, dept, staffID));
 
   if(!uniq.length){
     body.innerHTML = "<tr><td colspan='5' class='small'>วันนี้ยังไม่มีงานที่ถูกมอบหมาย</td></tr>";
     return;
   }
 
-  const today = todayStr();
   const subSnap = await db().collection("submissions")
     .where("staffUid","==",uid)
     .where("date","==",today)

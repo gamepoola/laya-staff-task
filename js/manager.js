@@ -86,6 +86,108 @@ function assignedToLabel(t, staffNameMap){
   return staffNameMap.get(a) || String(a); // fallback uid
 }
 
+const MAX_TASKS_PER_STAFF_PER_DAY = 2;
+
+function normalizeText(v){
+  return String(v || "").trim().toLowerCase();
+}
+
+function taskAppliesToDate(task, date){
+  const taskDate = String(task?.forDate || "").trim();
+  return !taskDate || taskDate === String(date || "").trim();
+}
+
+function taskTargetsStaff(task, staff){
+  const assignedTo = String(task?.assignedTo || "").trim();
+  if (!assignedTo) return false;
+  if (assignedTo === "all") return true;
+  if (assignedTo === "department") {
+    return normalizeText(task?.department) && normalizeText(task?.department) === normalizeText(staff?.department);
+  }
+  return assignedTo === String(staff?.uid || "").trim() || assignedTo === String(staff?.staffID || "").trim();
+}
+
+async function getNonManagerStaffList(){
+  const snap = await db().collection("staff").limit(500).get();
+  return snap.docs
+    .map(d => ({ uid: d.id, ...d.data() }))
+    .filter(s => (s.role || "staff") !== "manager");
+}
+
+async function getActiveTasksForDate(date, excludeTaskId = "") {
+  const snap = await db().collection("tasks").where("active","==",true).get();
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(t => t.id !== excludeTaskId)
+    .filter(t => taskAppliesToDate(t, date));
+}
+
+function countAssignmentsPerStaff(staffList, tasks){
+  const counts = new Map();
+  const deptMap = new Map();
+
+  for (const st of staffList) {
+    counts.set(st.uid, 0);
+    const deptKey = normalizeText(st.department);
+    if (!deptMap.has(deptKey)) deptMap.set(deptKey, []);
+    deptMap.get(deptKey).push(st);
+  }
+
+  for (const task of tasks) {
+    const assignedTo = String(task?.assignedTo || "").trim();
+    if (!assignedTo) continue;
+
+    if (assignedTo === "all") {
+      for (const st of staffList) counts.set(st.uid, (counts.get(st.uid) || 0) + 1);
+      continue;
+    }
+
+    if (assignedTo === "department") {
+      const members = deptMap.get(normalizeText(task.department)) || [];
+      for (const st of members) counts.set(st.uid, (counts.get(st.uid) || 0) + 1);
+      continue;
+    }
+
+    const direct = staffList.find(st => assignedTo === String(st.uid || "").trim() || assignedTo === String(st.staffID || "").trim());
+    if (direct) counts.set(direct.uid, (counts.get(direct.uid) || 0) + 1);
+  }
+
+  return counts;
+}
+
+async function checkTaskLimitBeforeSave(candidateTask, opts = {}){
+  const date = String(candidateTask?.forDate || pickDateForTasks());
+  const staffList = await getNonManagerStaffList();
+  const activeTasks = await getActiveTasksForDate(date, opts.excludeTaskId || "");
+  const currentCounts = countAssignmentsPerStaff(staffList, activeTasks);
+
+  const over = [];
+  for (const st of staffList) {
+    if (!taskTargetsStaff(candidateTask, st)) continue;
+    const nextCount = (currentCounts.get(st.uid) || 0) + 1;
+    if (nextCount > MAX_TASKS_PER_STAFF_PER_DAY) {
+      over.push({
+        uid: st.uid,
+        staffID: st.staffID || "",
+        name: st.name || "",
+        currentCount: currentCounts.get(st.uid) || 0,
+        nextCount
+      });
+    }
+  }
+
+  return { ok: over.length === 0, over, date };
+}
+
+function formatTaskLimitError(result){
+  const preview = result.over
+    .slice(0, 6)
+    .map(x => `${x.staffID || x.uid} ${x.name}`.trim())
+    .join(", " );
+  const more = result.over.length > 6 ? ` และอีก ${result.over.length - 6} คน` : "";
+  return `มอบหมายงานไม่ได้: พนักงานจะเกิน ${MAX_TASKS_PER_STAFF_PER_DAY} งานในวันที่ ${result.date} (${preview}${more})`;
+}
+
 
 
 function pickDateForTasks(){
@@ -412,14 +514,11 @@ async function loadNotSubmittedReport(){
   const body = el("reportRows");
   body.innerHTML = "<tr><td colspan='6' class='small'>กำลังคำนวณรายงาน...</td></tr>";
 
-  // Fetch all active tasks once
-  const taskSnap = await db().collection("tasks").where("active","==",true).get();
-  const tasks = taskSnap.docs.map(d=>({id:d.id, ...d.data()}));
+  // Fetch active tasks for the selected date only (legacy tasks without forDate are still included)
+  const tasks = await getActiveTasksForDate(date);
 
   // Fetch staff (limit 500 for prototype)
-  const staffSnap = await db().collection("staff").limit(500).get();
-  const staffList = staffSnap.docs.map(d=>({uid:d.id, ...d.data()}))
-    .filter(s => (s.role || "staff") !== "manager");
+  const staffList = await getNonManagerStaffList();
 
   // Fetch submissions of the date
   const subSnap = await db().collection("submissions").where("date","==",date).get();
@@ -438,9 +537,7 @@ async function loadNotSubmittedReport(){
     const dept = st.department || "";
     const assigned = [];
     for(const t of tasks){
-      if(t.assignedTo === "all") assigned.push(t.id);
-      else if(t.assignedTo === "department" && dept && t.department === dept) assigned.push(t.id);
-      else if(t.assignedTo === st.uid) assigned.push(t.id);
+      if(taskTargetsStaff(t, st)) assigned.push(t.id);
     }
     const assignedCount = assigned.length;
     if(assignedCount === 0) continue;
@@ -507,21 +604,41 @@ async function createTask(){
   }
 
   let assignedTo = "all";
-  if(mode==="all") assignedTo = "all";
-  if(mode==="department") assignedTo = "department";
-  if(mode==="staffid") {
+  if(mode === "all") assignedTo = "all";
+  if(mode === "department") assignedTo = "department";
+  if(mode === "staffid") {
     if(!assignedToInput){
       toast("Assign mode = Specific StaffID ต้องใส่ Staff ID", "danger");
       return;
     }
-    assignedTo = assignedToInput;
+
+    const q = await db().collection("staff").where("staffID","==",assignedToInput).limit(1).get();
+    if(q.empty){
+      toast("ไม่พบ Staff ID นี้ในระบบ", "danger");
+      return;
+    }
+    assignedTo = q.docs[0].id;
   }
 
   try{
     // If Firestore rules deny, we will show the real error instead of silently failing.
     const forDate = pickDateForTasks();
+    const limitCheck = await checkTaskLimitBeforeSave({
+      title,
+      description,
+      department,
+      priority,
+      assignedTo,
+      forDate,
+      active: true
+    });
 
-    const docRef = await db().collection("tasks").add({
+    if (!limitCheck.ok) {
+      toast(formatTaskLimitError(limitCheck), "danger");
+      return;
+    }
+
+    await db().collection("tasks").add({
       title, description, department, priority,
       assignedTo,
       forDate,
@@ -535,8 +652,7 @@ async function createTask(){
     el("taskDept").value="";
     el("assignedTo").value="";
 
-    await normalizeTaskAssignment(docRef.id);
-    toast("สร้างงานแล้ว ✅");
+    toast(`สร้างงานแล้ว ✅ (จำกัด ${MAX_TASKS_PER_STAFF_PER_DAY} งานต่อคนต่อวัน)`);
     await loadTaskTitlePick();
     await loadTaskList();
     await loadNotSubmittedReport();
@@ -608,7 +724,25 @@ const showApproved = !!(el("showApprovedChk") && el("showApprovedChk").checked);
 }
 
 async function toggleTask(id, to){
-  await db().collection("tasks").doc(id).update({active: !!to});
+  const ref = db().collection("tasks").doc(id);
+
+  if (to) {
+    const snap = await ref.get();
+    if (!snap.exists) {
+      toast("ไม่พบงานนี้", "danger");
+      return;
+    }
+
+    const task = snap.data() || {};
+    const forDate = String(task.forDate || pickDateForTasks());
+    const limitCheck = await checkTaskLimitBeforeSave({ ...task, active: true, forDate }, { excludeTaskId: id });
+    if (!limitCheck.ok) {
+      toast(formatTaskLimitError(limitCheck), "danger");
+      return;
+    }
+  }
+
+  await ref.update({active: !!to, updatedAt: firebase.firestore.FieldValue.serverTimestamp()});
   toast("อัปเดตงานแล้ว ✅");
   await loadTaskList();
   await loadNotSubmittedReport();
