@@ -10,7 +10,7 @@ service cloud.firestore {
     }
 
     match /staff/{uid} {
-      allow read: if signedIn() && (uid == request.auth.uid || isManager());
+      allow read: if signedIn();
       allow write: if isManager();
     }
 

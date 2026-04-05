@@ -14,6 +14,7 @@ async function loadStaffPage(){
   el("todayLabel").textContent = todayStr();
 
   await renderTasks(user.uid, profile?.department || "");
+  await loadAllStaffPoints();
 }
 
 async function renderTasks(uid, dept){
@@ -73,4 +74,53 @@ async function renderTasks(uid, dept){
 
 function goUpload(taskId){
   window.location.href = `upload.html?taskId=${encodeURIComponent(taskId)}`;
+}
+
+
+async function loadAllStaffPoints(){
+  const body = el("allPointsRows");
+  if(!body) return;
+
+  body.innerHTML = "<tr><td colspan='5' class='small'>กำลังโหลดคะแนน...</td></tr>";
+
+  try{
+    const snap = await db().collection("staff").limit(500).get();
+    const rows = [];
+
+    snap.forEach(doc => {
+      const s = doc.data() || {};
+      if ((s.role || "staff") === "manager") return;
+      rows.push({
+        staffID: s.staffID || "",
+        name: s.name || "",
+        position: s.position || "-",
+        department: s.department || "-",
+        points: Number(s.points || 0)
+      });
+    });
+
+    rows.sort((a,b)=> (b.points - a.points) || a.staffID.localeCompare(b.staffID));
+
+    if(!rows.length){
+      body.innerHTML = "<tr><td colspan='5' class='small'>ยังไม่มีข้อมูลพนักงาน</td></tr>";
+      return;
+    }
+
+    body.innerHTML = "";
+    for(const r of rows){
+      body.insertAdjacentHTML("beforeend", `
+        <tr>
+          <td><b>${escapeHtml(r.staffID)}</b></td>
+          <td>${escapeHtml(r.name)}</td>
+          <td>${escapeHtml(r.position)}</td>
+          <td>${escapeHtml(r.department)}</td>
+          <td><b>${r.points}</b></td>
+        </tr>
+      `);
+    }
+  }catch(e){
+    console.error(e);
+    body.innerHTML = "<tr><td colspan='5' class='small'>โหลดคะแนนไม่สำเร็จ</td></tr>";
+    toast("โหลดคะแนนไม่สำเร็จ: " + (e?.message||e), "danger");
+  }
 }

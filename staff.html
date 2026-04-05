@@ -82,7 +82,41 @@
         <tbody id="taskRows"></tbody>
       </table></div>
     </div>
+
+    <div class="card" style="margin-top:14px;">
+      <div class="row" style="align-items:flex-end;">
+        <div>
+          <h3 style="margin:0 0 6px 0;">Staff Points</h3>
+          <div class="small">แสดงคะแนนสะสมของพนักงานทุกคน เรียงจากมากไปน้อย</div>
+        </div>
+        <div class="actions" style="flex:0;">
+          <button id="togglePointsBtn" onclick="toggleBox('staffPointsBox', this)">Hide</button>
+        </div>
+      </div>
+      <div id="staffPointsBox" class="table-wrap" style="margin-top:10px;"><table class="table table-points">
+        <thead>
+          <tr>
+            <th>Staff ID</th>
+            <th>Name</th>
+            <th>Position</th>
+            <th>Department</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody id="allPointsRows"></tbody>
+      </table></div>
+    </div>
+
   </div>
+
+<script>
+function toggleBox(boxId, btn){
+  const box = document.getElementById(boxId);
+  const isHidden = box.style.display === "none";
+  box.style.display = isHidden ? "block" : "none";
+  if(btn) btn.textContent = isHidden ? "Hide" : "Show";
+}
+</script>
 
 <script src="js/firebase-config.js"></script>
 <script src="js/firebase-init.js"></script>
