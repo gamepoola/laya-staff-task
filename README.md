@@ -191,8 +191,3 @@ Deploy:
   2) K.Noi
   3) K.Parawee
   4) K.Joy
-
-
-## Rule update
-- จำกัดการมอบหมายงาน: พนักงาน 1 คนรับได้ไม่เกิน 2 งานต่อวัน
-- ระบบบล็อกทั้งตอน Create Task และตอน Enable Task

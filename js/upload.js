@@ -1,13 +1,59 @@
+const DAILY_SUBMISSION_LIMIT = 2;
+
+async function getTodaySubmissionStats(uid, taskId = "") {
+  const today = todayStr();
+  const snap = await db().collection("submissions")
+    .where("staffUid", "==", uid)
+    .where("date", "==", today)
+    .get();
+
+  let total = 0;
+  let taskAlreadySubmitted = false;
+
+  snap.forEach(doc => {
+    const data = doc.data() || {};
+    total += 1;
+    if (taskId && data.taskId === taskId) taskAlreadySubmitted = true;
+  });
+
+  return {
+    today,
+    total,
+    remaining: Math.max(0, DAILY_SUBMISSION_LIMIT - total),
+    taskAlreadySubmitted
+  };
+}
+
+function updateQuotaLabel(stats) {
+  const label = el("uploadQuotaLabel");
+  if (!label || !stats) return;
+  label.textContent = `${stats.total}/${DAILY_SUBMISSION_LIMIT} งาน (เหลือ ${stats.remaining})`;
+}
+
+function setSubmitLocked(text) {
+  const btn = el("submitBtn");
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = text;
+}
+
+function setSubmitReady(text = "Submit") {
+  const btn = el("submitBtn");
+  if (!btn) return;
+  btn.disabled = false;
+  btn.textContent = text;
+}
+
 async function loadUploadPage(){
   const user = await requireAuth();
   const taskId = qs("taskId");
 
   if(!taskId){
     toast("ไม่พบ taskId", "danger");
-    window.location.href="staff.html";
+    window.location.href = "staff.html";
     return;
-  
-  // show selected file count
+  }
+
   const photoInput = el("photo");
   if (photoInput && el("fileCount")) {
     photoInput.addEventListener("change", () => {
@@ -15,43 +61,42 @@ async function loadUploadPage(){
       el("fileCount").textContent = n ? `Selected: ${n} photo(s)` : "";
     });
   }
-}
 
   const taskSnap = await db().collection("tasks").doc(taskId).get();
   if(!taskSnap.exists){
     toast("ไม่พบงานนี้ในระบบ", "danger");
-    window.location.href="staff.html";
+    window.location.href = "staff.html";
     return;
   }
-  const task = taskSnap.data();
+
+  const task = taskSnap.data() || {};
   el("taskTitle").textContent = task.title || "-";
   el("taskDesc").textContent = task.description || "";
-  el("todayLabel").textContent = todayStr();
 
-  const today = todayStr();
-  const existing = await db().collection("submissions")
-    .where("staffUid","==",user.uid)
-    .where("taskId","==",taskId)
-    .where("date","==",today)
-    .limit(1).get();
+  const stats = await getTodaySubmissionStats(user.uid, taskId);
+  el("todayLabel").textContent = stats.today;
+  updateQuotaLabel(stats);
 
-  if(!existing.empty){
-    el("submitBtn").disabled = true;
-    el("submitBtn").textContent = "ส่งแล้ววันนี้";
+  if(stats.taskAlreadySubmitted){
+    setSubmitLocked("ส่งงานนี้แล้ววันนี้");
     toast("งานนี้ส่งแล้ววันนี้", "info");
+  } else if (stats.total >= DAILY_SUBMISSION_LIMIT) {
+    setSubmitLocked("ครบ 2 งานแล้ววันนี้");
+    toast("วันนี้ส่งงานครบ 2 งานแล้ว", "danger");
+  } else {
+    setSubmitReady(`Submit (${stats.remaining} slot left)`);
   }
 
-  const fileInput = el("photo");
-  if (fileInput) {
-    fileInput.addEventListener("change", async () => {
-      const f = fileInput.files && fileInput.files[0];
+  if (photoInput) {
+    photoInput.addEventListener("change", async () => {
+      const f = photoInput.files && photoInput.files[0];
       if (!f) return;
       const mb = (f.size/1024/1024).toFixed(2);
       toast(`เลือกไฟล์แล้ว (${mb} MB) — ระบบจะบีบอัดให้อัตโนมัติก่อนอัปโหลด`, "info");
     });
   }
 
-  el("backBtn").onclick = ()=> window.location.href="staff.html";
+  el("backBtn").onclick = () => window.location.href = "staff.html";
 }
 
 // ---------- Image compression (client-side) ----------
@@ -62,7 +107,6 @@ async function compressImageToJpeg(file, {
   initialQuality = 0.85,
   minQuality = 0.55
 } = {}) {
-
   const img = await loadImage(file);
 
   let width = img.width;
@@ -132,6 +176,15 @@ function loadImage(file) {
   });
 }
 
+async function deleteUploadedFiles(paths = []) {
+  for (const path of paths) {
+    if (!path) continue;
+    try {
+      await storage().ref().child(path).delete();
+    } catch (_) {}
+  }
+}
+
 async function submitWork(){
   const user = await requireAuth();
   const profile = await getProfile(user.uid);
@@ -143,28 +196,42 @@ async function submitWork(){
     return;
   }
 
-  // safety limit
   if (files.length > 10) {
     toast("เลือกได้สูงสุด 10 รูปต่อครั้ง", "danger");
     return;
   }
 
-  // HEIC hint
   const hasHeic = files.some(f => (f.name||"").toLowerCase().endsWith(".heic") || (f.name||"").toLowerCase().endsWith(".heif"));
   if (hasHeic) {
     toast("มีไฟล์ HEIC/HEIF: ถ้าอัปโหลดไม่ได้ ให้ตั้งกล้อง iPhone เป็น 'Most Compatible (JPEG)'", "danger");
   }
 
+  const precheck = await getTodaySubmissionStats(user.uid, taskId);
+  updateQuotaLabel(precheck);
+
+  if (precheck.taskAlreadySubmitted) {
+    setSubmitLocked("ส่งงานนี้แล้ววันนี้");
+    toast("งานนี้ส่งแล้ววันนี้", "info");
+    return;
+  }
+
+  if (precheck.total >= DAILY_SUBMISSION_LIMIT) {
+    setSubmitLocked("ครบ 2 งานแล้ววันนี้");
+    toast("วันนี้ส่งงานครบ 2 งานแล้ว", "danger");
+    return;
+  }
+
+  const today = precheck.today;
+  const ts = Date.now();
+  const submissionId = `${today}__${user.uid}__${taskId}`;
+
+  const photoPaths = [];
+  const photoURLs = [];
+  const originalSizesBytes = [];
+  const uploadedSizesBytes = [];
+
   try{
-    el("submitBtn").disabled = true;
-
-    const today = todayStr();
-    const ts = Date.now();
-
-    const photoPaths = [];
-    const photoURLs = [];
-    const originalSizesBytes = [];
-    const uploadedSizesBytes = [];
+    setSubmitLocked("Preparing...");
 
     for(let i=0;i<files.length;i++){
       const file = files[i];
@@ -190,9 +257,22 @@ async function submitWork(){
       photoURLs.push(url);
     }
 
+    const finalCheck = await getTodaySubmissionStats(user.uid, taskId);
+    updateQuotaLabel(finalCheck);
+
+    if (finalCheck.taskAlreadySubmitted || finalCheck.total >= DAILY_SUBMISSION_LIMIT) {
+      await deleteUploadedFiles(photoPaths);
+      if (finalCheck.taskAlreadySubmitted) {
+        setSubmitLocked("ส่งงานนี้แล้ววันนี้");
+        throw new Error("งานนี้ถูกส่งไปแล้ววันนี้");
+      }
+      setSubmitLocked("ครบ 2 งานแล้ววันนี้");
+      throw new Error("วันนี้ส่งงานครบ 2 งานแล้ว");
+    }
+
     el("submitBtn").textContent = "Saving...";
 
-    await db().collection("submissions").add({
+    await db().collection("submissions").doc(submissionId).set({
       taskId,
       staffUid: user.uid,
       staffID: profile?.staffID || "",
@@ -200,12 +280,10 @@ async function submitWork(){
       department: profile?.department || "",
       date: today,
 
-      // NEW: multiple photos
       photoPaths,
       photoURLs,
       photosCount: photoURLs.length,
 
-      // Backward compatible (first photo)
       photoPath: photoPaths[0] || "",
       photoURL: photoURLs[0] || "",
 
@@ -219,13 +297,27 @@ async function submitWork(){
       uploadedTotalBytes: uploadedSizesBytes.reduce((a,b)=>a+b,0)
     });
 
+    const afterSave = await getTodaySubmissionStats(user.uid, taskId);
+    updateQuotaLabel(afterSave);
+
     toast(`ส่งงานสำเร็จ ✅ (${photoURLs.length} รูป)` , "info");
-    setTimeout(()=> window.location.href="staff.html", 800);
+    setTimeout(() => window.location.href = "staff.html", 800);
   }catch(e){
     console.error(e);
-    toast("ส่งงานไม่สำเร็จ: " + (e?.message||e), "danger");
-    el("submitBtn").disabled = false;
-    el("submitBtn").textContent = "Submit";
+    if (String(e?.message || "").toLowerCase().includes("permission")) {
+      toast("ส่งงานไม่สำเร็จ: งานนี้อาจถูกส่งแล้ว หรือไม่มีสิทธิ์เขียนข้อมูล", "danger");
+    } else {
+      toast("ส่งงานไม่สำเร็จ: " + (e?.message||e), "danger");
+    }
+
+    const latest = await getTodaySubmissionStats(user.uid, taskId).catch(() => null);
+    if (latest) {
+      updateQuotaLabel(latest);
+      if (latest.taskAlreadySubmitted) setSubmitLocked("ส่งงานนี้แล้ววันนี้");
+      else if (latest.total >= DAILY_SUBMISSION_LIMIT) setSubmitLocked("ครบ 2 งานแล้ววันนี้");
+      else setSubmitReady(`Submit (${latest.remaining} slot left)`);
+    } else {
+      setSubmitReady("Submit");
+    }
   }
 }
-

@@ -1,3 +1,43 @@
+const DAILY_SUBMISSION_LIMIT = 2;
+
+async function getTodaySubmissionSummary(uid){
+  const today = todayStr();
+  const subSnap = await db().collection("submissions")
+    .where("staffUid","==",uid)
+    .where("date","==",today)
+    .get();
+
+  const statusByTask = new Map();
+  let total = 0;
+
+  subSnap.forEach(d => {
+    const data = d.data() || {};
+    total += 1;
+    if (data.taskId && !statusByTask.has(data.taskId)) {
+      statusByTask.set(data.taskId, data.status || "waiting");
+    }
+  });
+
+  return {
+    today,
+    total,
+    remaining: Math.max(0, DAILY_SUBMISSION_LIMIT - total),
+    reachedLimit: total >= DAILY_SUBMISSION_LIMIT,
+    statusByTask
+  };
+}
+
+function updateDailyQuota(summary){
+  if (el("todaySubmissionCount")) {
+    el("todaySubmissionCount").textContent = `${summary.total}/${DAILY_SUBMISSION_LIMIT}`;
+  }
+  if (el("dailyQuotaLabel")) {
+    el("dailyQuotaLabel").textContent = summary.reachedLimit
+      ? `ครบ ${DAILY_SUBMISSION_LIMIT} งานแล้ววันนี้`
+      : `เหลือส่งได้อีก ${summary.remaining} งานวันนี้`;
+  }
+}
+
 async function loadStaffPage(){
   const user = await requireAuth();
   const profile = await getProfile(user.uid);
@@ -11,34 +51,34 @@ async function loadStaffPage(){
   el("staffDepartment").textContent = profile?.department || "-";
   if (el("staffPoints")) el("staffPoints").textContent = String(profile?.points ?? 0);
   el("staffCode").textContent = profile?.staffID || "-";
-  el("todayLabel").textContent = todayStr();
 
-  await renderTasks(user.uid, profile?.department || "");
+  const summary = await getTodaySubmissionSummary(user.uid);
+  el("todayLabel").textContent = summary.today;
+  updateDailyQuota(summary);
+
+  await renderTasks(user.uid, profile?.department || "", summary);
   await loadAllStaffPoints();
 }
 
-async function renderTasks(uid, dept){
+async function renderTasks(uid, dept, summary){
   const body = el("taskRows");
   body.innerHTML = "<tr><td colspan='5' class='small'>กำลังโหลด...</td></tr>";
 
   const tasks = [];
   const q1 = await db().collection("tasks").where("active","==",true).where("assignedTo","==",uid).get();
-  q1.forEach(d=> tasks.push({id:d.id, ...d.data()}));
+  q1.forEach(d => tasks.push({id:d.id, ...d.data()}));
 
   if(dept){
     const q2 = await db().collection("tasks").where("active","==",true).where("assignedTo","==","department").where("department","==",dept).get();
-    q2.forEach(d=> tasks.push({id:d.id, ...d.data()}));
+    q2.forEach(d => tasks.push({id:d.id, ...d.data()}));
   }
 
   const q3 = await db().collection("tasks").where("active","==",true).where("assignedTo","==","all").get();
-  q3.forEach(d=> tasks.push({id:d.id, ...d.data()}));
+  q3.forEach(d => tasks.push({id:d.id, ...d.data()}));
 
-  const today = todayStr();
   const seen = new Set();
   const uniq = [];
   for(const t of tasks){
-    const taskDate = t.forDate || today;
-    if(taskDate !== today) continue;
     if(seen.has(t.id)) continue;
     seen.add(t.id);
     uniq.push(t);
@@ -49,18 +89,18 @@ async function renderTasks(uid, dept){
     return;
   }
 
-  const subSnap = await db().collection("submissions")
-    .where("staffUid","==",uid)
-    .where("date","==",today)
-    .get();
-
-  const statusByTask = new Map();
-  subSnap.forEach(d=> statusByTask.set(d.data().taskId, d.data().status || "waiting"));
-
   body.innerHTML = "";
   for(const t of uniq){
-    const st = statusByTask.get(t.id);
-    const action = st ? statusBadge(st) : `<button class="success" onclick="goUpload('${t.id}')">ส่งงาน</button>`;
+    const st = summary.statusByTask.get(t.id);
+    let action = "";
+
+    if (st) {
+      action = statusBadge(st);
+    } else if (summary.reachedLimit) {
+      action = `<button class="secondary" disabled>ครบ 2 งานแล้ว</button>`;
+    } else {
+      action = `<button class="success" onclick="goUpload('${t.id}')">ส่งงาน</button>`;
+    }
 
     body.insertAdjacentHTML("beforeend", `
       <tr>
@@ -68,7 +108,7 @@ async function renderTasks(uid, dept){
         <td>${escapeHtml(t.department || "-")}</td>
         <td>${escapeHtml(t.priority || "Normal")}</td>
         <td>${action}</td>
-        <td class="small">${escapeHtml(today)}</td>
+        <td class="small">${escapeHtml(summary.today)}</td>
       </tr>
     `);
   }
@@ -77,7 +117,6 @@ async function renderTasks(uid, dept){
 function goUpload(taskId){
   window.location.href = `upload.html?taskId=${encodeURIComponent(taskId)}`;
 }
-
 
 async function loadAllStaffPoints(){
   const body = el("allPointsRows");
