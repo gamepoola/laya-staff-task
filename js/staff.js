@@ -57,7 +57,7 @@ async function loadStaffPage(){
   updateDailyQuota(summary);
 
   await renderTasks(user.uid, profile?.department || "", summary);
-  await loadAllStaffPoints();
+  await loadAllStaffPoints(profile);
 }
 
 async function renderTasks(uid, dept, summary){
@@ -118,11 +118,39 @@ function goUpload(taskId){
   window.location.href = `upload.html?taskId=${encodeURIComponent(taskId)}`;
 }
 
-async function loadAllStaffPoints(){
+async function loadAllStaffPoints(profile){
   const body = el("allPointsRows");
   if(!body) return;
 
   body.innerHTML = "<tr><td colspan='5' class='small'>กำลังโหลดคะแนน...</td></tr>";
+
+  const renderRows = (rows) => {
+    if(!Array.isArray(rows) || !rows.length){
+      body.innerHTML = "<tr><td colspan='5' class='small'>ยังไม่มีข้อมูลพนักงาน</td></tr>";
+      return;
+    }
+
+    const cleanRows = rows.map(r => ({
+      staffID: r?.staffID || "",
+      name: r?.name || "",
+      position: r?.position || "-",
+      department: r?.department || "-",
+      points: Number(r?.points || 0)
+    })).sort((a,b)=> (b.points - a.points) || String(a.staffID).localeCompare(String(b.staffID)));
+
+    body.innerHTML = "";
+    for(const r of cleanRows){
+      body.insertAdjacentHTML("beforeend", `
+        <tr>
+          <td><b>${escapeHtml(r.staffID)}</b></td>
+          <td>${escapeHtml(r.name)}</td>
+          <td>${escapeHtml(r.position)}</td>
+          <td>${escapeHtml(r.department)}</td>
+          <td><b>${r.points}</b></td>
+        </tr>
+      `);
+    }
+  };
 
   try{
     const snap = await db().collection("staff").limit(500).get();
@@ -140,27 +168,17 @@ async function loadAllStaffPoints(){
       });
     });
 
-    rows.sort((a,b)=> (b.points - a.points) || a.staffID.localeCompare(b.staffID));
+    renderRows(rows);
+  }catch(e){
+    console.warn("loadAllStaffPoints direct query failed, fallback to profile.sharedLeaderboard", e);
 
-    if(!rows.length){
-      body.innerHTML = "<tr><td colspan='5' class='small'>ยังไม่มีข้อมูลพนักงาน</td></tr>";
+    const fallbackRows = Array.isArray(profile?.sharedLeaderboard) ? profile.sharedLeaderboard : [];
+    if(fallbackRows.length){
+      renderRows(fallbackRows);
+      toast("เปิดดูคะแนนจากข้อมูลสำรองในโปรไฟล์แล้ว", "info");
       return;
     }
 
-    body.innerHTML = "";
-    for(const r of rows){
-      body.insertAdjacentHTML("beforeend", `
-        <tr>
-          <td><b>${escapeHtml(r.staffID)}</b></td>
-          <td>${escapeHtml(r.name)}</td>
-          <td>${escapeHtml(r.position)}</td>
-          <td>${escapeHtml(r.department)}</td>
-          <td><b>${r.points}</b></td>
-        </tr>
-      `);
-    }
-  }catch(e){
-    console.error(e);
     body.innerHTML = "<tr><td colspan='5' class='small'>โหลดคะแนนไม่สำเร็จ</td></tr>";
     toast("โหลดคะแนนไม่สำเร็จ: " + (e?.message||e), "danger");
   }

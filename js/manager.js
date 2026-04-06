@@ -179,6 +179,7 @@ async function loadManagerPage(){
   await loadTaskList();
   await loadNotSubmittedReport();
   await loadStaffPoints();
+  await syncSharedStaffLeaderboard();
 }
 
 async function loadKpi(date){
@@ -356,6 +357,8 @@ async function deleteSubmission(id){
     toast("ลบแล้ว ✅");
     await loadSubmissions();
     await loadNotSubmittedReport();
+    await loadStaffPoints();
+    await syncSharedStaffLeaderboard();
   }catch(e){
     console.error(e);
     toast("ลบไม่สำเร็จ: " + (e?.message||e), "danger");
@@ -397,6 +400,8 @@ async function cleanupOld(){
     toast(`Cleanup สำเร็จ: ลบ ${n} รายการ ✅`);
     await loadSubmissions();
     await loadNotSubmittedReport();
+    await loadStaffPoints();
+    await syncSharedStaffLeaderboard();
   }catch(e){
     console.error(e);
     toast("Cleanup ไม่สำเร็จ: " + (e?.message||e), "danger");
@@ -540,6 +545,8 @@ async function createTask(){
     await loadTaskTitlePick();
     await loadTaskList();
     await loadNotSubmittedReport();
+    await loadStaffPoints();
+    await syncSharedStaffLeaderboard();
   }catch(e){
     console.error(e);
     const msg = (e && e.message) ? e.message : String(e);
@@ -691,6 +698,8 @@ async function createStaff(){
     el("newStaffRole").value="staff";
 
     await loadNotSubmittedReport();
+    await loadStaffPoints();
+    await syncSharedStaffLeaderboard();
   }catch(e){
     console.error(e);
     toast("สร้างบัญชีไม่สำเร็จ: " + (e?.message||e), "danger");
@@ -699,6 +708,58 @@ async function createStaff(){
   }
 }
 
+
+async function buildStaffPointsRows(){
+  const snap = await db().collection("staff").limit(500).get();
+  const rows = [];
+  const docRefs = [];
+
+  snap.forEach(doc => {
+    docRefs.push(doc.ref);
+    const s = doc.data() || {};
+    if ((s.role || "staff") === "manager") return;
+    rows.push({
+      staffID: s.staffID || "",
+      name: s.name || "",
+      position: s.position || "-",
+      department: s.department || "-",
+      points: Number(s.points || 0)
+    });
+  });
+
+  rows.sort((a,b)=> (b.points - a.points) || String(a.staffID).localeCompare(String(b.staffID)));
+  return { rows, docRefs };
+}
+
+async function syncSharedStaffLeaderboard(rowsInput){
+  try{
+    const built = rowsInput ? { rows: rowsInput, docRefs: (await db().collection("staff").limit(500).get()).docs.map(d => d.ref) } : await buildStaffPointsRows();
+    const payload = built.rows.map(r => ({
+      staffID: r.staffID,
+      name: r.name,
+      position: r.position,
+      department: r.department,
+      points: Number(r.points || 0)
+    }));
+
+    if(!built.docRefs.length) return;
+
+    const chunkSize = 400;
+    for(let i=0; i<built.docRefs.length; i += chunkSize){
+      const batch = db().batch();
+      const refs = built.docRefs.slice(i, i + chunkSize);
+      refs.forEach(ref => {
+        batch.set(ref, {
+          sharedLeaderboard: payload,
+          leaderboardUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      });
+      await batch.commit();
+    }
+  }catch(e){
+    console.warn("syncSharedStaffLeaderboard failed:", e);
+  }
+}
 
 // =====================
 // Staff Points
@@ -710,30 +771,14 @@ async function loadStaffPoints(){
   body.innerHTML = "<tr><td colspan='5' class='small'>กำลังโหลดคะแนน...</td></tr>";
 
   try{
-    const snap = await db().collection("staff").limit(500).get();
-    const rows = [];
-    snap.forEach(doc => {
-      const s = doc.data() || {};
-      if ((s.role || "staff") === "manager") return;
-      rows.push({
-        staffID: s.staffID || "",
-        name: s.name || "",
-        position: s.position || "-",
-        department: s.department || "-",
-        points: Number(s.points || 0)
-      });
-    });
-
-    rows.sort((a,b)=> (b.points - a.points) || a.staffID.localeCompare(b.staffID));
+    const { rows } = await buildStaffPointsRows();
 
     if(rows.length === 0){
       body.innerHTML = "<tr><td colspan='5' class='small'>ยังไม่มีข้อมูลพนักงาน</td></tr>";
       return;
     }
 
-    const showApproved = !!(el("showApprovedChk") && el("showApprovedChk").checked);
-
-  body.innerHTML = "";
+    body.innerHTML = "";
     for(const r of rows){
       body.insertAdjacentHTML("beforeend", `
         <tr>
@@ -745,6 +790,8 @@ async function loadStaffPoints(){
         </tr>
       `);
     }
+
+    await syncSharedStaffLeaderboard(rows);
   }catch(e){
     console.error(e);
     body.innerHTML = "<tr><td colspan='5' class='small'>โหลดคะแนนไม่สำเร็จ</td></tr>";

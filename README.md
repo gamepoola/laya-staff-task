@@ -191,3 +191,9 @@ Deploy:
   2) K.Noi
   3) K.Parawee
   4) K.Joy
+
+
+## Staff Points fallback
+- หน้า Staff Points ของพนักงานจะพยายามอ่าน `staff` collection โดยตรงก่อน
+- ถ้า rules ของ Firestore ยังจำกัดการอ่านรายชื่อพนักงาน ระบบจะ fallback ไปใช้ `sharedLeaderboard` ที่ Manager sync ไว้ในโปรไฟล์ของพนักงานแต่ละคน
+- ดังนั้นหลังอัปไฟล์ใหม่ ให้ Manager เข้า `manager.html` อย่างน้อย 1 ครั้งเพื่อ sync ตารางคะแนนล่าสุด
