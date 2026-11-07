@@ -1,0 +1,10 @@
+{
+  "application": "FB Staff APP",
+  "sourceCommit": "bb382adc9483ddeed6ebf56ae0a9d15418331be3",
+  "frontendBuild": "d2e4623e3441",
+  "testsPassed": 45,
+  "environment": "emulator",
+  "productionProjectReference": "laya-staff-task-us",
+  "deployed": false,
+  "files": 99
+}

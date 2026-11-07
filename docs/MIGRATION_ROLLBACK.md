@@ -1,0 +1,24 @@
+# Migration, retention and rollback / แผนย้ายและกู้คืน
+
+## Development checkpoint
+Original ZIP untouched in Downloads; extracted original under `../original/laya-staff-task-main`. SHA-256 in AUDIT_REPORT.md. Local git commits preserve the audited original and V4 implementation; delivered ZIP is a separate recoverable checkpoint. Never deploy original source: it contains permissive rules and the seven-day cleanup job.
+
+## Before approved cutover
+1. Inventory deployed function names/schedules (especially cleanupOldSubmissions and archiveApprovedToDrive), rule versions, Auth providers, all collection counts and bucket locations. Source ZIP cannot prove live settings.
+2. Take encrypted access-controlled Firestore export, Auth export (handle hashes/salts securely), Storage inventory including all object generations/metadata/tokens and deployed web/function artifacts. Verify object counts, sizes and sample hashes. Record point balances, existing pointsAwarded and checklist IDs. Backup operations/costs need approval; nothing was executed here.
+3. Restore to isolated staging project and rehearse with preserved UIDs. Check indexes complete. Do not import live passwords or personal data into committed test fixtures.
+4. With explicit approval, **disable the deployed legacy deletion schedule and old archival trigger**. Merely removing exports from source does not stop deployed functions. Confirm no other TTL, lifecycle policy or external script deletes evidence. Do not use broad CLI deletion commands.
+5. Clean/normalize malformed task targets or missing profile UID links only through a reviewed dry-run mapping. Preserve original payload and counts. Do not map StaffID to UID by guess. New UI uses known UID selections; old unresolved targets stay visible to manager for repair.
+6. Existing profiles containing sharedLeaderboard remain intact on disk but are sanitized by profile API and blocked for staff direct reads. Optional later field removal requires a backed-up reviewed migration; no migration is necessary to use V4. Existing approved evidence and balances are never recalculated automatically.
+7. Legacy public download tokens can bypass rules for anyone who has the URL. Inventory exposure and access logs; choose a separately approved token revocation/copy strategy with staged link compatibility and private access checks. No token rotation done here.
+8. Freeze legacy writes; deploy approved backend/rules/indexes and V4 Hosting together. Disable old client entrypoints and clear/update PWA caches through the new update flow. Smoke test with real authorized accounts. Existing staff role fields are trusted only because server/rules deny all browser profile writes.
+
+## Rollback
+If acceptance fails, pause new writes, snapshot new V4 records and audit/point ledgers. Redeploy last known **secure V4** artifact, matching rules and backend. Do not roll back to permissive V3 rules or restart seven-day deletion. If data restore is required, restore backup into a new isolated database/project first, reconcile task/submission/checklist IDs and object generations; use a reviewed plan to replay post-backup point transactions once, never blindly add points. Compare counts and sample evidence before traffic resumes. Keep original production project intact. Record responsible operator and timestamps.
+
+## Proposed retention policy (disabled)
+Initial safe state: retain all historic evidence, no scheduled purge. Stakeholder proposal: draft/orphan review after 30 days, ordinary evidence 90 days, approved important/compliance evidence 365 days or longer under legal hold, metadata/decision/point ledgers according to hotel policy. These are proposals, not active rules. Hotel owner must define periods and legal obligations.
+
+Future archive job: workload identity/ADC and least-privilege Shared Drive access (no base64 service-account key in env/source); archive all photoPaths, reserve a deterministic Drive file ID per photo in Firestore before upload, upload/retry using that ID, lease state with expiry, record hash/size/Drive ID and archive verified timestamp. Reconcile Drive success after Firestore failure instead of creating another file. Retry transient errors with exponential backoff, dead-letter permanent failures. Service-account My Drive storage ownership/quota and Shared Drive support must be verified. Do not delete originals until independently verified archive, backup and restore drill plus approved grace period. Drive archival is intentionally disabled in V4 until this workflow is implemented and cloud-authorized; legacy archival has not been represented as fixed or tested.
+
+Restore rehearsal: recover metadata/ledger and a selected day's all photo paths into isolated staging, verify file hashes and authenticated viewer, verify historical points flags, checklist revision history and daily counts. Retain written evidence of rehearsal. No live backup, restore or archive was performed in this task.

@@ -1,199 +1,51 @@
-# Laya Staff Task — v3 (Hotel-style)
+# FB Staff APP
 
-เพิ่ม 2 อย่างตามที่ขอ:
-1) รายงาน “ใครยังไม่ส่งงานวันนี้” (ตามงานที่ถูกมอบหมาย)
-2) Auto delete 7 วันแบบอัตโนมัติจริง (Firebase Cloud Functions + Scheduler)
+แอปงานพนักงานโรงแรม ภาษาไทย/อังกฤษ สำหรับมือถือและ Windows Edge. รุ่นนี้เตรียมให้ทดสอบในเครื่องและเตรียม deploy ไป staging โดยไม่เชื่อมข้อมูลจริงเป็นค่าเริ่มต้น.
 
----
+## เริ่มต้น
+ติดตั้ง Node 22, npm และ Java 21+ แล้วเปิดโฟลเดอร์นี้:
 
-## Deploy Web (GitHub Pages)
-1) แตกไฟล์ zip แล้วอัปโหลดไฟล์ทั้งหมดขึ้น repo
-2) GitHub → Settings → Pages → Deploy from branch → main / root
+```powershell
+npm ci
+npm ci --prefix functions
+npx playwright install chromium
+npm run build
+npm test
+npm run check
+npm run test:integration
+```
 
-## ตั้งค่า Firebase (เว็บ)
-1) เปิดไฟล์ `js/firebase-config.js` แล้วใส่ config ของโปรเจค
-2) Firebase Console → Auth → Authorized domains → เพิ่มโดเมน GitHub Pages ของคุณ เช่น `YOURNAME.github.io`
-3) เปิดใช้งาน: Auth (Email/Password), Firestore, Storage
+ชุด browser acceptance ใช้ Chromium และ Microsoft Edge ที่ติดตั้งใน Windows. หากไม่มี Edge ให้ติดตั้ง Edge หรือเรียก `npx playwright test --project=Chromium` และรายงาน Edge เป็น NOT TESTED. ใช้ `npm start` เปิด Firebase Emulator; seed บัญชีจำลองตาม [คู่มือ](docs/DEPLOYMENT.md) แล้วเข้า http://127.0.0.1:5000. รหัสผ่าน seed สุ่มใหม่ ไม่ใช้ default password. การเปิด HTML จาก file:// ไม่รองรับ Firebase/PWA.
 
----
+## สิ่งที่ใช้งานได้
+พนักงานดูงานวันนี้ ส่งรูป JPEG ที่บีบอัดพร้อมบันทึก ติดตามผล/เหตุผลที่ให้แก้ไข ประวัติและคะแนน; เก็บแบบร่างรูปในเครื่องและลองส่งซ้ำด้วย request ID เดิมเมื่อเครือข่ายขัดข้อง. ผู้จัดการตรวจรูป private อนุมัติ/ปฏิเสธ/เปิดให้แก้ไข มอบหมายงานรายคน/แผนก/outlet/กะ พร้อมงานครั้งเดียว/รายวัน/รายสัปดาห์; จัดการพนักงานและกะ, checklist เดิม 53 ข้อพร้อมรูป/ติดตามผล, รายงานกรองวันที่/แผนก/outlet/พนักงาน ส่ง CSV และพิมพ์/PDF.
 
-## รายงาน “ใครยังไม่ส่งงานวันนี้” ทำงานยังไง
-นิยามในระบบ v3:
-- “มีงานที่ได้รับมอบหมายอย่างน้อย 1 งาน” และ “ส่งไม่ครบตามงานที่ได้รับมอบหมาย” ในวันที่เลือก (filter date)
-- รายงานจะแสดง Submitted X/Y และ Missing
+การส่งงาน/ตรวจสิทธิ์/quota/คะแนนอยู่บน server; rules ปิดการเขียน business data โดยตรง. การส่งสองงานต่อวันและการให้คะแนนครั้งเดียวต่อ submission ใช้ transaction. ไม่มี PIN สำหรับสิทธิ์ผู้จัดการ. ไม่ลบ historic data อัตโนมัติ.
 
-> ถ้าต้องการให้เป็น “ยังไม่ส่งเลยแม้แต่งานเดียว” บอกฉันได้ เดี๋ยวปรับให้
+## เอกสารส่งมอบ
+- [Audit](AUDIT_REPORT.md) — สิ่งที่พบและแผน V4
+- [Database and business rules](docs/DATABASE.md) — compatibility, collections, KPI
+- [Deployment guide](docs/DEPLOYMENT.md) — local/staging/production gates
+- [Migration, retention and rollback](docs/MIGRATION_ROLLBACK.md)
+- [Testing and security report](docs/TESTING_SECURITY_REPORT.md)
+- [Costs](docs/COST_ESTIMATE.md) — assumptions and official sources
+- [Phase checkpoints](docs/PHASE_LOG.md)
+- [Limitations and priorities](docs/LIMITATIONS.md)
 
----
+## Source layout
+`functions/` trusted backend; `firebase-rules/` rules; `js/` web application/SDK/template source; six HTML routes and `css/`; `tools/build.cjs` bundles into Hosting-only `public/`; `tools/pages.cjs` regenerates HTML from maintained templates (edit templates before regenerating); `tests/` domain/security/integration/browser tests. `config/production.example.js` contains original public Firebase identifiers and is not published. Root configuration defaults to demo-laya-v4. Lockfiles included for both dependency trees; dependency overrides pin patched transitive versions and are exercised by acceptance tests.
 
-## Auto delete 7 วันแบบอัตโนมัติจริง (Cloud Functions)
-ในโฟลเดอร์ `functions/` มี Scheduled Function ชื่อ `cleanupOldSubmissions`
-- รันทุกวันเวลา 03:30 (Asia/Bangkok)
-- ลบ `submissions` ที่ `date < cutoff` และลบรูปใน Storage ที่อยู่ใน `photoPath`
+ยังไม่ได้ deploy, เปลี่ยน billing, แก้ production หรือทดสอบบน Android จริง. อ่าน limitations ก่อนใช้จริง โดยเฉพาะการปิด scheduler เก่า, URL tokens เดิม, assignment history และ Google Drive archive ที่ปิดไว้.
 
-### สิ่งที่ต้องรู้ (สำคัญ)
-- Scheduled Functions โดยทั่วไปต้องใช้ Blaze plan (มี billing) เพื่อให้ Cloud Scheduler ทำงานได้
+## การตรวจรับ UI รอบล่าสุด
+ดู [รายงานตรวจภาพและขั้นตอนใช้งานภาษาไทย](docs/VISUAL_ACCEPTANCE_TH.md), [ผลทดสอบรอบล่าสุด](docs/VISUAL_TEST_RESULTS_TH.md) และ [แกลเลอรีภาพหน้าจอจริง 8 กลุ่ม](docs/acceptance/index.html). ภาพก่อน/หลังและภาพเต็มหน้ารวมอยู่ในแพ็กเกจนี้.
 
-### Deploy Functions (Firebase CLI)
-1) ติดตั้ง Firebase CLI (ครั้งแรก):
-   - npm i -g firebase-tools
-2) Login:
-   - firebase login
-3) ตั้งค่าโปรเจค:
-   - firebase use --add  (เลือกโปรเจคของหน่อย)
-4) Deploy:
-   - firebase deploy --only functions
+## Hotel pilot release — 7 พฤศจิกายน 2026
+เริ่มจาก [RELEASE_READINESS.md](RELEASE_READINESS.md). นโยบายใหม่ลบหลักฐานหลัง 168 ชั่วโมง ไม่มี archive รูป ดู [คู่มือ staging](docs/STAGING_RELEASE_TH.md), [cleanup](docs/PHOTO_RETENTION_TH.md), [backup/restore](docs/BACKUP_RESTORE_TH.md), [Android จริง](docs/ANDROID_ACCEPTANCE_TH.md), [pilot 5–10 คน](docs/HOTEL_PILOT_TH.md), [ค่าใช้จ่าย](docs/FIREBASE_COST_TH.md). โปรแกรม cleanup default dry-run และยังไม่มี cloud deployment.
 
-### ตั้งค่า retention days (ถ้าต้องการเปลี่ยน)
-ค่า default = 7 วัน
-- ใน functions จะอ่านจาก process.env.RETENTION_DAYS ถ้ามี
-- หรือแก้ในโค้ด functions/index.js
+## FB Staff APP — ชื่ออย่างเป็นทางการ
+คู่มือสภาพแวดล้อมและ production safety ล่าสุดอยู่ที่ docs/FB_STAFF_APP_FIREBASE_TH.md. ชื่อ LAYA ใน Firebase IDs, storage paths, internal cache keys และภาพประวัติการทดสอบเก่าคงไว้เพื่อ compatibility และหลักฐานย้อนหลัง; ชื่อแอปติดตั้งและหน้าจอปัจจุบันคือ FB Staff APP.
 
----
-
-## Collections (Firestore)
-- staff/{uid}: staffID, name, position, department, role
-- tasks/{taskId}: title, description, department, priority, assignedTo, active
-- submissions/{subId}: staffUid, staffID, staffName, taskId, date, photoURL, photoPath, status
-
----
-
-## ✅ Config already filled
-ไฟล์ `js/firebase-config.js` ถูกใส่ config ของโปรเจค `laya-staff-task` แล้ว
-
-> ถ้า Storage อัปโหลดไม่ได้ ให้ตรวจใน Firebase Console → Project settings ว่า storageBucket เป็นค่าอะไร (บางโปรเจคจะเป็น `xxxx.appspot.com`)
-
-## ✅ Rules files included
-มีไฟล์ rules สำหรับ copy ไปวางที่ Firebase Console:
-- `firebase-rules/firestore.rules`
-- `firebase-rules/storage.rules`
-
-⚠️ Firestore Rules ที่ตอนนี้เป็น `allow read, write: if false;` จะทำให้เว็บใช้งานไม่ได้ ต้องเปลี่ยนเป็น rules ที่ให้ในไฟล์ด้านบน
-
----
-
-## ✅ Image compression enabled (target ~2MB)
-ระบบจะบีบอัดรูปก่อนอัปโหลดอัตโนมัติ (จำกัดด้านยาวสุด 1600px และพยายามทำให้ไฟล์ ~2MB)
-
-ช่วยให้:
-- อัปโหลดเร็วขึ้น
-- ประหยัดค่าใช้จ่าย Storage/Download
-- ใช้งานกับมือถือได้ลื่นขึ้น
-
-หมายเหตุ iPhone: ถ้าเป็นไฟล์ HEIC/HEIF แล้วมีปัญหา ให้ตั้ง Camera → Formats → **Most Compatible (JPEG)**
-
----
-
-## ✅ Firebase Config Updated
-โปรเจคนี้ถูกตั้งค่าให้ใช้ Firebase โปรเจค: **laya-staff-task-us**
-- authDomain: laya-staff-task-us.firebaseapp.com
-- storageBucket: laya-staff-task-us.firebasestorage.app
-
-ถ้า login ไม่ผ่านบน GitHub Pages:
-Firebase Console → Authentication → Settings → Authorized domains → เพิ่ม `YOURNAME.github.io`
-
-
-## ✅ Login case-insensitive
-Staff ID จะถูกแปลงเป็นตัวพิมพ์เล็กอัตโนมัติ (เช่น MGR01 → mgr01@laya.local) เพื่อลดปัญหา login ไม่ผ่านจากตัวพิมพ์ใหญ่/เล็ก
-
----
-
-## ✅ Manager Console: Create Task troubleshooting
-เวอร์ชันนี้เพิ่ม error message ตอนกด Create Task (ถ้า Firestore Rules ไม่อนุญาต จะขึ้นสาเหตุ เช่น `Missing or insufficient permissions`)
-
-ถ้าขึ้น permissions:
-1) ตรวจ Firestore Rules ให้เป็นแบบที่ให้ไว้ (manager role = "manager")
-2) ตรวจ `staff/{UID}` ของ manager ต้องใช้ **Document ID = UID** และมี field `role: "manager"`
-
----
-
-## ✅ Points system (Manager Approve = +1)
-- เมื่อ Manager กด **Approve** ระบบจะเพิ่มคะแนนให้พนักงาน **+1** และสะสมไว้ที่ `staff/{uid}.points`
-- ให้คะแนน “ครั้งเดียวต่อ submission” (ใช้ flag `pointsAwarded` กันกด Approve ซ้ำแล้วได้คะแนนเพิ่ม)
-- Manager ดูคะแนนทั้งหมดได้ในหน้า **Manager Console → Staff Points**
-- Staff ดูคะแนนตัวเองได้ในหน้า **Staff Dashboard**
-
----
-
-## ✅ Priority-based points
-ตอนกด **Approve** คะแนนจะเพิ่มตาม Priority ของ Task:
-- Normal = +1
-- High = +2
-- Critical = +3
-
-ระบบจะบันทึกค่าแต้มที่ให้ไว้ใน submission เป็น `pointsAwardedValue`
-
-
----
-
-## ✅ Transaction fix
-แก้ error: `Firestore transactions require all reads to be executed before all writes` โดยจัดลำดับใน transaction ให้ **อ่านก่อนเขียน**
-
----
-
-## ✅ Archive approved photos to Google Drive (optional)
-หลัง Manager กด **Approve** ระบบสามารถคัดลอกรูปจาก Firebase Storage ไปเก็บใน Google Drive ได้อัตโนมัติ (ผ่าน Cloud Functions)
-
-ไฟล์ที่เกี่ยวข้อง:
-- `functions/index.js` → `archiveApprovedToDrive`
-- `functions/.env` (ต้องสร้างเอง และห้าม commit)
-
-สิ่งที่ต้องทำ:
-1) เปิด Google Drive API ใน Google Cloud Console
-2) สร้าง Service Account + ดาวน์โหลด key (JSON)
-3) สร้างโฟลเดอร์ใน Google Drive และ Share ให้ service account email เป็น Editor
-4) สร้าง `functions/.env`:
-   - `DRIVE_FOLDER_ID=...`
-   - `DRIVE_SA_KEY_B64=...`  (base64 ของไฟล์ JSON key)
-
-Deploy:
-- `cd functions && npm i`
-- `firebase deploy --only functions`
-
----
-
-## ✅ Fix: Firestore transaction reads-before-writes
-ถ้าเคยขึ้น error: `Firestore transactions require all reads to be executed before all writes.`
-เวอร์ชัน FINAL แก้แล้ว โดยใน `setStatus()` ทำการอ่าน submission + task (priority) **ก่อน** แล้วค่อยเขียนสถานะ/แต้ม
-
-ถ้ายังขึ้น error หลังอัปไฟล์:
-- ให้ทำ Hard refresh (Ctrl+F5) หรือเปิดหน้าเว็บแบบ Incognito เพื่อเคลียร์ cache
-
-
----
-
-## ✅ Hide approved from Daily Submissions
-หลัง Manager กด **Approve** รายการนั้นจะถูกซ่อนออกจากตาราง Daily Submissions อัตโนมัติ (ค่าเริ่มต้น)
-ถ้าต้องการดูรายการที่ Approve แล้ว ให้ติ๊ก `Show approved` ในหน้า Manager Console
-
----
-
-## ✅ Checklist Report (Manager daily) — The Taste
-เพิ่มหน้า `checklist.html` สำหรับ Manager ใช้เช็กงานรายวันตามแบบฟอร์มในไฟล์ PDF “Daily Checklist Restaurant (The Taste)”
-
-วิธีเข้า:
-- หน้า Manager Console → ปุ่ม **Checklist report**
-
-การบันทึก:
-- Firestore collection: `manager_checklists`
-- Document ID: `{Outlet}_{YYYY-MM-DD}_{Shift}` เช่น `The_Taste_2026-03-08_Morning`
-
-⚠️ ต้องอัปเดต Firestore Rules ใน Firebase Console ให้ Manager เขียน collection นี้ได้
-ดูตัวอย่างใน `firebase-rules/firestore.rules`
-
----
-
-## ✅ Checklist update: Shift + Outlet + Action By dropdown
-- เพิ่ม Shift: Morning / Afternoon
-- เพิ่ม Outlet: The Taste / The Mangrove
-- ช่อง Action By เปลี่ยนเป็นแบบเลือกได้ (dropdown):
-  1) K.Too
-  2) K.Noi
-  3) K.Parawee
-  4) K.Joy
-
-
-## Staff Points fallback
-- หน้า Staff Points ของพนักงานจะพยายามอ่าน `staff` collection โดยตรงก่อน
-- ถ้า rules ของ Firestore ยังจำกัดการอ่านรายชื่อพนักงาน ระบบจะ fallback ไปใช้ `sharedLeaderboard` ที่ Manager sync ไว้ในโปรไฟล์ของพนักงานแต่ละคน
-- ดังนั้นหลังอัปไฟล์ใหม่ ให้ Manager เข้า `manager.html` อย่างน้อย 1 ครั้งเพื่อ sync ตารางคะแนนล่าสุด
+## ระบบสมัครและจัดการบัญชีพนักงาน
+คู่มือภาษาไทย: [สมัครสมาชิกและจัดการบัญชี](docs/STAFF_ACCOUNTS_TH.md)
+ผู้สมัครตั้งรหัสผ่านเองและรอผู้จัดการเปิดสิทธิ์ ผู้จัดการสร้างบัญชี เปิด–ปิดสิทธิ์ แก้ไขข้อมูล และตั้งรหัสผ่านพนักงานใหม่ได้ การสร้างบัญชีผู้จัดการยังต้องดำเนินการโดยผู้ดูแลระบบ

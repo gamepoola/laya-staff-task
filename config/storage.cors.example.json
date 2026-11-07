@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["https://YOUR-APPROVED-STAGING-PROJECT.web.app"],
+    "method": ["GET", "HEAD"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Content-Length", "Content-Disposition"]
+  }
+]

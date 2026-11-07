@@ -1,111 +1,128 @@
-// Firebase compat SDK (เหมาะกับ GitHub Pages / static hosting)
-function loadScript(src){
-  return new Promise((resolve, reject)=>{
-    const s=document.createElement("script");
-    s.src=src;
-    s.onload=resolve;
-    s.onerror=reject;
-    document.head.appendChild(s);
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  connectAuthEmulator,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  setPersistence,
+  browserSessionPersistence,
+} from "firebase/auth";
+import {
+  getFunctions,
+  connectFunctionsEmulator,
+  httpsCallable,
+} from "firebase/functions";
+import {
+  getStorage,
+  connectStorageEmulator,
+  ref,
+  uploadBytesResumable,
+  getBlob,
+  getMetadata,
+} from "firebase/storage";
+import {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+} from "firebase/app-check";
+const c = window.LAYA_CONFIG;
+if (!c?.firebase?.projectId) throw Error("Missing configuration");
+const local = ["localhost", "127.0.0.1"].includes(location.hostname);
+if (
+  c.environment === "staging" &&
+  (!/^laya-[a-z0-9-]+-staging$/.test(c.firebase.projectId) ||
+    !c.firebase.storageBucket?.startsWith(c.firebase.projectId + ".") ||
+    c.firebase.authDomain !== c.firebase.projectId + ".firebaseapp.com")
+)
+  throw Error("Staging configuration cannot connect to another project");
+if (
+  c.environment === "emulator" &&
+  (!local || !c.firebase.projectId.startsWith("demo-"))
+)
+  throw Error(
+    "Emulator configuration may only run on localhost with a demo project",
+  );
+const app = initializeApp(c.firebase);
+export const auth = getAuth(app),
+  functions = getFunctions(app, c.region || "us-central1"),
+  storage = getStorage(app);
+if (c.environment === "emulator") {
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+  connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+  connectStorageEmulator(storage, "127.0.0.1", 9199);
+} else if (c.appCheckSiteKey)
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(c.appCheckSiteKey),
+    isTokenAutoRefreshEnabled: true,
   });
-}
-
-async function initFirebase(){
-  const cfg = window.__FIREBASE_CONFIG__;
-  if (!cfg || cfg.apiKey === "PASTE_HERE") {
-    console.warn("Firebase config not set. Edit js/firebase-config.js");
-  }
-  if (window.firebase && firebase.apps && firebase.apps.length) return;
-
-  const v = "10.12.5";
-  await loadScript(`https://www.gstatic.com/firebasejs/${v}/firebase-app-compat.js`);
-  await loadScript(`https://www.gstatic.com/firebasejs/${v}/firebase-auth-compat.js`);
-  await loadScript(`https://www.gstatic.com/firebasejs/${v}/firebase-firestore-compat.js`);
-  await loadScript(`https://www.gstatic.com/firebasejs/${v}/firebase-storage-compat.js`);
-
-  firebase.initializeApp(cfg);
-}
-
-function auth(){ return firebase.auth(); }
-function db(){ return firebase.firestore(); }
-function storage(){ return firebase.storage(); }
-
-function el(id){ return document.getElementById(id); }
-
-function toast(msg, kind="info"){
-  const box = document.createElement("div");
-  box.className = "notice";
-  box.style.position = "fixed";
-  box.style.left = "20px";
-  box.style.right = "20px";
-  box.style.bottom = "20px";
-  box.style.zIndex = "9999";
-  box.style.maxWidth = "1100px";
-  box.style.margin = "0 auto";
-  box.style.borderColor = kind==="danger" ? "rgba(251,113,133,.35)" : "rgba(255,255,255,.12)";
-  box.textContent = msg;
-  document.body.appendChild(box);
-  setTimeout(()=> box.remove(), 3200);
-}
-
-function staffIdToEmail(staffID){
-  const dom = window.__STAFF_EMAIL_DOMAIN__ || "laya.local";
-  const s = String(staffID || "").trim().toLowerCase();
-  if (!s) return "";
-  if (s.includes("@")) return s;
-  return `${s}@${dom}`;
-}
-
-function todayStr(d = new Date()){
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,"0");
-  const da = String(d.getDate()).padStart(2,"0");
-  return `${y}-${m}-${da}`;
-}
-
-function qs(name){
-  const u = new URL(window.location.href);
-  return u.searchParams.get(name);
-}
-
-function escapeHtml(str){
-  return String(str ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
-
-async function requireAuth(redirectTo="login.html"){
-  await initFirebase();
-  return new Promise((resolve)=>{
-    const unsub = auth().onAuthStateChanged(user=>{
-      unsub();
-      if(!user){ window.location.href = redirectTo; return; }
-      resolve(user);
+export const ready = setPersistence(auth, browserSessionPersistence);
+export async function currentUser() {
+  await ready;
+  return new Promise((resolve) => {
+    const un = onAuthStateChanged(auth, (u) => {
+      un();
+      resolve(u);
     });
   });
 }
-
-async function getProfile(uid){
-  const snap = await db().collection("staff").doc(uid).get();
-  return snap.exists ? snap.data() : null;
+export async function api(name, data = {}) {
+  if (!navigator.onLine)
+    throw Error("ออฟไลน์ — ยังไม่ได้บันทึกบน server / Offline");
+  return (await httpsCallable(functions, name, { timeout: 120000 })(data)).data;
 }
-
-function statusBadge(status){
-  const s = status || "waiting";
-  return `<span class="badge ${s}">${s}</span>`;
+export async function login(staffID, password) {
+  await ready;
+  const email = staffID.includes("@")
+    ? staffID.trim().toLowerCase()
+    : staffID.trim().toLowerCase() + "@laya.local";
+  return signInWithEmailAndPassword(auth, email, password);
 }
-
-function requireManagerPin(){
-  const pin = prompt("กรุณาใส่รหัสผู้จัดการ (PIN) เพื่อดำเนินการต่อ:");
-  return pin === (window.__MANAGER_DELETE_PIN__ || "1234");
+export async function register(staffID, password, name) {
+  await ready;
+  const id = staffID.trim().toLowerCase();
+  if (!/^[a-z0-9_-]{1,40}$/.test(id))
+    throw Error("รหัสพนักงานใช้ a-z, 0-9, _ และ - ไม่เกิน 40 ตัว");
+  if (password.length < 12 || password.length > 128)
+    throw Error("รหัสผ่านต้องมี 12–128 ตัว");
+  try {
+    try {
+      await createUserWithEmailAndPassword(auth, id + "@laya.local", password);
+    } catch (e) {
+      if (e.code !== "auth/email-already-in-use") throw e;
+      await signInWithEmailAndPassword(auth, id + "@laya.local", password);
+    }
+    return await api("registerStaff", { name });
+  } finally {
+    await signOut(auth);
+  }
 }
-
-
-/* PWA service worker */
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(console.warn);
+export async function logout() {
+  await signOut(auth);
+  sessionStorage.clear();
+  location.href = "login.html";
+}
+export async function photoBlob(path) {
+  return getBlob(ref(storage, path), 2 * 1024 * 1024);
+}
+export async function upload(path, blob, progress) {
+  const r = ref(storage, path);
+  try {
+    const m = await getMetadata(r);
+    if (m.size === blob.size) return;
+  } catch (e) {
+    if (e.code !== "storage/object-not-found") throw e;
+  }
+  await new Promise((resolve, reject) => {
+    const task = uploadBytesResumable(r, blob, {
+      contentType: "image/jpeg",
+      cacheControl: "private, no-store",
+    });
+    task.on(
+      "state_changed",
+      (s) => progress(Math.round((s.bytesTransferred / s.totalBytes) * 100)),
+      reject,
+      resolve,
+    );
   });
 }

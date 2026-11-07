@@ -1,0 +1,12 @@
+{
+  "environment": "staging",
+  "region": "us-central1",
+  "firebase": {
+    "projectId": "laya-hotel-pilot-staging",
+    "storageBucket": "laya-hotel-pilot-staging.firebasestorage.app",
+    "authDomain": "laya-hotel-pilot-staging.firebaseapp.com",
+    "apiKey": "REPLACE_WITH_APPROVED_PROJECT_PUBLIC_KEY",
+    "appId": "REPLACE_WITH_APPROVED_PROJECT_APP_ID"
+  },
+  "appCheckSiteKey": "REPLACE_WITH_REGISTERED_STAGING_SITE_KEY"
+}

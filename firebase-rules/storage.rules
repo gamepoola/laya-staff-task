@@ -1,17 +1,14 @@
 rules_version = '2';
 service firebase.storage {
-  match /b/{bucket}/o {
-
-    function signedIn() { return request.auth != null; }
-    function isManager() {
-      return signedIn() &&
-        firestore.get(/databases/(default)/documents/staff/$(request.auth.uid)).data.role == "manager";
-    }
-
-    match /submissions/{date}/{uid}/{taskId}/{fileName} {
-      allow read: if signedIn() && (uid == request.auth.uid || isManager());
-      allow write: if signedIn() && uid == request.auth.uid;
-      allow delete: if isManager();
-    }
+ match /b/{bucket}/o {
+  function active() { return request.auth != null && firestore.exists(/databases/(default)/documents/staff/$(request.auth.uid)) && firestore.get(/databases/(default)/documents/staff/$(request.auth.uid)).data.get('active', true) == true; }
+  function manager() { return active() && firestore.get(/databases/(default)/documents/staff/$(request.auth.uid)).data.role == 'manager'; }
+  match /drafts/{uid}/{requestId}/{fileName} {
+   allow read: if active() && request.auth.uid == uid;
+   allow write: if resource == null && request.resource != null && active() && request.auth.uid == uid && requestId.matches('[a-zA-Z0-9_-]{8,100}') && fileName.matches('[0-9]\\.jpg') && request.resource.size > 0 && request.resource.size <= 2 * 1024 * 1024 && request.resource.contentType == 'image/jpeg';
   }
+  match /evidence/{uid}/{submission}/{revision}/{fileName} { allow read: if active() && (uid == request.auth.uid || manager()); }
+  match /checklistEvidence/{checklistId}/{fileName} { allow read: if manager(); }
+  match /submissions/{date}/{uid}/{taskId}/{fileName} { allow read: if active() && (uid == request.auth.uid || manager()); }
+ }
 }

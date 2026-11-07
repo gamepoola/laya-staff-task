@@ -1,0 +1,2 @@
+const fs=require('node:fs'),sharp=require('../functions/node_modules/sharp');
+(async()=>{const svg=fs.readFileSync('assets/app-icon.svg');for(const n of [192,512])for(const name of [`icon-${n}`,`maskable-${n}`])await sharp(svg).resize(n,n).flatten({background:'#123f35'}).png().toFile(`icons/${name}.png`);await sharp(svg).resize(180,180).flatten({background:'#123f35'}).png().toFile('icons/apple-touch-icon.png');})();

@@ -1,13 +1,42 @@
 {
   "functions": [
     {
-      "source": "functions"
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "nodejs22",
+      "ignore": ["node_modules", ".git", "*.log", ".env.example"]
     }
   ],
-  "firestore": {
-    "rules": "firebase-rules/firestore.rules"
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" },
+          { "key": "X-Content-Type-Options", "value": "nosniff" },
+          { "key": "Referrer-Policy", "value": "no-referrer" },
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' https://www.google.com https://www.gstatic.com https://www.recaptcha.net; connect-src 'self' http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* https://*.googleapis.com https://*.cloudfunctions.net https://*.run.app https://*.firebaseio.com https://*.firebaseapp.com https://www.google.com https://www.recaptcha.net; img-src 'self' blob: data:; style-src 'self'; frame-src https://*.firebaseapp.com https://www.google.com https://recaptcha.google.com https://www.recaptcha.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+          }
+        ]
+      }
+    ]
   },
-  "storage": {
-    "rules": "firebase-rules/storage.rules"
+  "firestore": {
+    "rules": "firebase-rules/firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": { "rules": "firebase-rules/storage.rules" },
+  "emulators": {
+    "auth": { "host": "127.0.0.1", "port": 9099 },
+    "firestore": { "host": "127.0.0.1", "port": 8080 },
+    "storage": { "host": "127.0.0.1", "port": 9199 },
+    "functions": { "host": "127.0.0.1", "port": 5001 },
+    "hosting": { "host": "127.0.0.1", "port": 5000 },
+    "ui": { "enabled": true, "host": "127.0.0.1", "port": 4000 },
+    "singleProjectMode": true
   }
 }

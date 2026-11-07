@@ -1,0 +1,2 @@
+// Original PUBLIC web configuration; never loaded by local builds. No private credential here.
+window.LAYA_CONFIG={environment:'production',region:'us-central1',firebase:{apiKey:'AIzaSyA9vGJU4E8MDeQjj9Ei73KZRhMTG61iAEc',authDomain:'laya-staff-task-us.firebaseapp.com',projectId:'laya-staff-task-us',storageBucket:'laya-staff-task-us.firebasestorage.app',messagingSenderId:'720667229826',appId:'1:720667229826:web:d8cde53f43ed21d737be9b'},appCheckSiteKey:''};
