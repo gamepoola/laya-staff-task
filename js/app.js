@@ -769,15 +769,29 @@ function renderManager() {
         p.accountState === "deleting";
       $("resetStaffPassword").hidden = p.accountState === "deleting";
       $("deleteStaffAccount").hidden = p.role !== "staff";
-      form.scrollIntoView({ behavior: "smooth" });
+      openStaffEditor();
     });
     $("staffList").append(el);
   }
   analytics(manager, t);
   searchList("taskList", t);
-  searchList("staffList", t);
+  searchList(
+    "staffList",
+    t,
+    t("ค้นหาชื่อหรือรหัสพนักงาน…", "Search name or staff ID…"),
+  );
   enhance();
   translate();
+}
+function openStaffEditor() {
+  const editor = $("staffEditor");
+  editor.dataset.open = "true";
+  editor.querySelector("h2").focus({ preventScroll: true });
+  editor.scrollIntoView({ block: "start" });
+}
+function closeStaffEditor() {
+  $("staffForm").reset();
+  $("staffEditor").dataset.open = "false";
 }
 function fillForm(f, data) {
   f.dataset.filling = "true";
@@ -987,9 +1001,17 @@ async function setupManager() {
         ),
       );
     await api(v.id ? "saveStaff" : "createStaff", v);
-    f.reset();
+    closeStaffEditor();
     await loadManager();
     toast(t("บันทึกพนักงานแล้ว", "Staff saved"));
+  });
+  $("newStaffAccount").addEventListener("click", () => {
+    $("staffForm").reset();
+    openStaffEditor();
+  });
+  $("closeStaffEditor").addEventListener("click", () => {
+    closeStaffEditor();
+    $("newStaffAccount").focus();
   });
   listen("resetStaffPassword", "click", async () => {
     const f = $("staffForm");
@@ -1041,11 +1063,11 @@ async function setupManager() {
     try {
       await api("deleteStaffAccount", { id: staff.id, staffID });
     } catch (error) {
-      form.reset();
+      closeStaffEditor();
       await loadManager().catch(() => {});
       throw error;
     }
-    form.reset();
+    closeStaffEditor();
     await loadManager();
     toast(
       t(
@@ -1387,6 +1409,14 @@ async function boot() {
   }
   if (page === "login") {
     await ready;
+    const showPassword = $("showLoginPassword");
+    const setPasswordVisibility = () => {
+      const fields = $("loginForm").elements;
+      fields.password.type = fields.confirmPassword.type = showPassword.checked
+        ? "text"
+        : "password";
+    };
+    showPassword.addEventListener("change", setPasswordVisibility);
     $("environment").textContent =
       window.LAYA_CONFIG.environment === "emulator"
         ? t(
@@ -1397,7 +1427,8 @@ async function boot() {
     let registering = false;
     $("registrationToggle").addEventListener("click", () => {
       registering = !registering;
-      document.body.classList.toggle("register-mode", registering);
+      showPassword.checked = false;
+      setPasswordVisibility();
       document.querySelector(".login-form h1").textContent = registering
         ? t("สมัครพนักงานใหม่", "Register as staff")
         : t("พร้อมสำหรับวันใหม่", "Ready for a new day");

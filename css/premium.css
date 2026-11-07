@@ -1492,26 +1492,40 @@ body:has(#manageStaff:not([hidden])) #attention {
   accent-color: #438c63;
 }
 .photo-picker {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 15px;
+  gap: 14px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 1px dashed #9eb29d;
+  border-radius: 12px;
+  background: #edf3e8;
   color: var(--ink);
-  margin: 10px 0;
-}
-#photo {
-  padding: 12px;
-  font-size: 13px;
-}
-#photo::file-selector-button {
-  min-height: 44px;
-  border: 0;
-  border-radius: 8px;
-  background: #e3ebdf;
-  color: #123f35;
-  padding: 8px 14px;
-  margin-right: 8px;
   cursor: pointer;
+}
+.photo-picker:focus-within {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+.photo-picker #photo {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.photo-picker-copy {
+  display: grid;
+  gap: 2px;
+}
+.photo-picker-copy strong {
+  font-size: 15px;
+}
+.photo-picker-copy small {
+  font-size: 12px;
+  color: #526057;
 }
 .photo-tile button {
   width: 44px;
@@ -1724,8 +1738,103 @@ body:has(#manageStaff:not([hidden])) #attention {
     margin-bottom: 20px;
   }
 }
+#closeStaffEditor {
+  display: none;
+}
+.login-password-toggle {
+  min-height: 44px;
+  cursor: pointer;
+}
+
 @media (max-width: 700px) {
-  .register-mode .login-story {
+  .login-story,
+  .sidebar:not(.expanded) nav,
+  #staffEditor[data-open="false"],
+  body[data-page="staff"] #staffProgress,
+  body[data-page="upload"] .upload-server-note {
     display: none;
+  }
+  .login-form {
+    margin: 14px auto;
+    padding: 20px;
+  }
+  .login-form:before {
+    margin-bottom: 10px;
+  }
+  .login-form input:not([type="checkbox"]),
+  .shell input:not([type="checkbox"]):not([type="file"]),
+  .shell select,
+  .shell textarea {
+    font-size: 16px;
+  }
+  .sidebar .mobile-menu {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 7px 12px !important;
+  }
+  .sidebar.expanded nav a {
+    font-size: 13px;
+    white-space: normal;
+    padding: 9px;
+  }
+  .topbar #identity {
+    font-size: 14px;
+  }
+  .topbar button {
+    font-size: 12px;
+    padding-inline: 10px;
+  }
+  #closeStaffEditor {
+    display: inline-flex;
+    margin-bottom: 12px;
+  }
+  .staff-list-heading {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  #staffEditor {
+    scroll-margin-top: 12px;
+  }
+  #staffForm .actions > button {
+    flex: 1 1 135px;
+  }
+  body[data-page="upload"] .intro {
+    min-height: 0;
+  }
+  .upload-back {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  #previews:empty {
+    display: none;
+  }
+  .upload-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: #fffdf8;
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+  }
+  .upload-actions button {
+    flex: 1;
+  }
+}
+
+@media (min-width: 360px) and (max-width: 700px) {
+  body[data-page="staff"] .stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  body[data-page="staff"] .stat {
+    min-height: 76px;
+    padding: 8px;
+  }
+  body[data-page="staff"] .stat-label .ui-icon,
+  body[data-page="staff"] .stat-detail {
+    display: none;
+  }
+  body[data-page="staff"] .stat-label span {
+    font-size: 11px;
   }
 }

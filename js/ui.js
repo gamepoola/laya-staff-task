@@ -76,17 +76,9 @@ export function setupShell(t) {
     details.open = mq.matches;
     mq.addEventListener("change", () => (details.open = mq.matches));
   }
-  const photo = document.querySelector("#photo");
-  if (photo) {
-    photo.insertAdjacentHTML(
-      "beforebegin",
-      `<span class="photo-picker">${icon("camera")} ${t("เลือกรูปหลักฐาน", "Choose evidence photos")}</span>`,
-    );
-    photo.setAttribute(
-      "aria-label",
-      t("เลือกรูปหลักฐาน", "Choose evidence photos"),
-    );
-  }
+  document
+    .querySelector(".photo-picker")
+    ?.insertAdjacentHTML("afterbegin", icon("camera"));
   document
     .querySelectorAll(".logo")
     .forEach((el) =>
@@ -121,14 +113,15 @@ export function setupShell(t) {
   if (sidebar) {
     const toggle = document.createElement("button");
     toggle.className = "mobile-menu secondary";
-    toggle.innerHTML = icon("layers");
-    toggle.setAttribute("aria-label", t("เปิดเมนู", "Open navigation"));
+    toggle.innerHTML = `${icon("layers")}<span data-th="เมนู" data-en="Menu">${t("เมนู", "Menu")}</span>`;
+    sidebar.querySelector("nav").id = "primaryNavigation";
+    toggle.setAttribute("aria-controls", "primaryNavigation");
     toggle.setAttribute("aria-expanded", "false");
     toggle.onclick = () => {
       const open = sidebar.classList.toggle("expanded");
       toggle.setAttribute("aria-expanded", String(open));
     };
-    document.querySelector(".topbar").prepend(toggle);
+    sidebar.querySelector("nav").before(toggle);
   }
   document
     .querySelectorAll(".intro")
@@ -234,20 +227,36 @@ export function analytics(data, t) {
     el.prepend(value);
   });
 }
-export function searchList(id, t) {
+export function searchList(
+  id,
+  t,
+  placeholder = t(
+    "ค้นหาชื่อ แผนก หรือจุดบริการ…",
+    "Search name, department or outlet…",
+  ),
+) {
   const list = document.getElementById(id);
-  if (!list || list.previousElementSibling?.classList.contains("list-search"))
-    return;
-  const label = document.createElement("label");
-  label.className = "list-search";
-  label.innerHTML = `${icon("search")}<input type="search" aria-label="${t("ค้นหา", "Search")}" placeholder="${t("ค้นหาชื่อ แผนก หรือจุดบริการ…", "Search name, department or outlet…")}">`;
-  list.before(label);
-  label.querySelector("input").addEventListener("input", (e) => {
-    const q = e.target.value.toLowerCase();
+  if (!list) return;
+  let label = list.previousElementSibling;
+  const apply = (input) => {
+    const q = input.value.trim().toLowerCase();
     [...list.children].forEach(
       (el) => (el.hidden = !el.textContent.toLowerCase().includes(q)),
     );
-  });
+  };
+  if (!label?.classList.contains("list-search")) {
+    label = document.createElement("label");
+    label.className = "list-search";
+    label.innerHTML = `${icon("search")}<input type="search">`;
+    list.before(label);
+    label
+      .querySelector("input")
+      .addEventListener("input", (e) => apply(e.target));
+  }
+  const input = label.querySelector("input");
+  input.setAttribute("aria-label", t("ค้นหา", "Search"));
+  input.placeholder = placeholder;
+  apply(input);
 }
 export function ask(
   message,
