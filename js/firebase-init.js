@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { FirebaseError, initializeApp } from "firebase/app";
 import {
   getAuth,
   connectAuthEmulator,
@@ -78,19 +78,40 @@ export async function login(staffID, password) {
     : staffID.trim().toLowerCase() + "@laya.local";
   return signInWithEmailAndPassword(auth, email, password);
 }
+export function validStaffPassword(password) {
+  return (
+    typeof password === "string" &&
+    password.length >= 6 &&
+    password.length <= 9 &&
+    !!password.trim()
+  );
+}
 export async function register(staffID, password, name) {
   await ready;
   const id = staffID.trim().toLowerCase();
   if (!/^[a-z0-9_-]{1,40}$/.test(id))
     throw Error("รหัสพนักงานใช้ a-z, 0-9, _ และ - ไม่เกิน 40 ตัว");
-  if (password.length < 12 || password.length > 128)
-    throw Error("รหัสผ่านต้องมี 12–128 ตัว");
+  if (!validStaffPassword(password))
+    throw new FirebaseError("app/staff-password-length", "Use 6–9 characters");
   try {
     try {
       await createUserWithEmailAndPassword(auth, id + "@laya.local", password);
     } catch (e) {
       if (e.code !== "auth/email-already-in-use") throw e;
-      await signInWithEmailAndPassword(auth, id + "@laya.local", password);
+      try {
+        await signInWithEmailAndPassword(auth, id + "@laya.local", password);
+      } catch (signInError) {
+        if (
+          !["auth/invalid-credential", "auth/wrong-password"].includes(
+            signInError.code,
+          )
+        )
+          throw signInError;
+        throw new FirebaseError(
+          "app/staff-account-exists",
+          "Staff ID already registered",
+        );
+      }
     }
     return await api("registerStaff", { name });
   } finally {

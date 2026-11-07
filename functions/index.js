@@ -553,16 +553,20 @@ exports.registerStaff = callable(async (req) => {
     return { existing: false, active: false };
   });
 });
+function staffPassword(password) {
+  if (
+    typeof password !== "string" ||
+    password.length < 6 ||
+    password.length > 9 ||
+    !password.trim()
+  )
+    fail("invalid-argument", "Use a password of 6–9 characters");
+  return password;
+}
 exports.resetStaffPassword = callable(async (req) => {
   const p = await actor(req, true),
     uid = id(req.data?.id);
-  const password = req.data?.password;
-  if (
-    typeof password !== "string" ||
-    password.length < 12 ||
-    password.length > 128
-  )
-    fail("invalid-argument", "Use a password of 12–128 characters");
+  const password = staffPassword(req.data?.password);
   const target = await db.doc("staff/" + uid).get();
   if (!target.exists || target.data().role !== "staff")
     fail("permission-denied", "Only staff passwords can be reset");
@@ -582,12 +586,7 @@ exports.createStaff = callable(async (req) => {
     staffID = str(d.staffID, 40, true).toLowerCase();
   if (!/^[a-z0-9_-]+$/.test(staffID))
     fail("invalid-argument", "Invalid staff ID");
-  const password = str(d.password, 128, true);
-  if (password.length < 12)
-    fail(
-      "invalid-argument",
-      "Use a unique password with at least 12 characters",
-    );
+  const password = staffPassword(d.password);
   const fields = {
     staffID,
     name: str(d.name, 200, true),

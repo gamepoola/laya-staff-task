@@ -15,6 +15,7 @@ import {
   currentUser,
   login,
   register,
+  validStaffPassword,
   logout,
   photoBlob,
   upload,
@@ -79,6 +80,14 @@ function error(e) {
     "auth/invalid-credential": t(
       "รหัสพนักงานหรือรหัสผ่านไม่ถูกต้อง",
       "Invalid staff ID or password",
+    ),
+    "app/staff-account-exists": t(
+      "รหัสพนักงานนี้มีบัญชีอยู่แล้ว กดกลับไปเข้าสู่ระบบแล้วใช้รหัสผ่านเดิม หากลืมรหัสผ่านให้ติดต่อผู้ดูแลระบบ",
+      "This staff ID already has an account. Go back to sign in with the existing password. Contact an administrator if you forgot it.",
+    ),
+    "app/staff-password-length": t(
+      "รหัสผ่านใหม่ต้องมี 6–9 ตัว",
+      "The new password must have 6–9 characters",
     ),
   };
   message(
@@ -955,6 +964,13 @@ async function setupManager() {
     const f = $("staffForm"),
       v = formValues(f);
     v.active = f.elements.active.checked;
+    if (!v.id && !validStaffPassword(v.password))
+      throw Error(
+        t(
+          "รหัสผ่านใหม่ต้องมี 6–9 ตัว",
+          "The new password must have 6–9 characters",
+        ),
+      );
     await api(v.id ? "saveStaff" : "createStaff", v);
     f.reset();
     await loadManager();
@@ -963,9 +979,12 @@ async function setupManager() {
   listen("resetStaffPassword", "click", async () => {
     const f = $("staffForm");
     if (!f.elements.id.value) return;
-    if (f.elements.password.value.length < 12)
+    if (!validStaffPassword(f.elements.password.value))
       throw Error(
-        t("กรอกรหัสผ่านใหม่อย่างน้อย 12 ตัว", "Enter at least 12 characters"),
+        t(
+          "รหัสผ่านใหม่ต้องมี 6–9 ตัว",
+          "The new password must have 6–9 characters",
+        ),
       );
     if (
       !(await ask(
@@ -1346,7 +1365,6 @@ async function boot() {
         $(id).hidden = !registering;
       f.elements.registrationName.required = registering;
       f.elements.confirmPassword.required = registering;
-      f.elements.password.minLength = registering ? 12 : 1;
       f.elements.password.autocomplete = registering
         ? "new-password"
         : "current-password";

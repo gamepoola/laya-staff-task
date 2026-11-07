@@ -23,13 +23,24 @@ test("staff registration, manager activation, reset and suspended access", async
   page,
 }) => {
   const staffID = "signup-" + Date.now(),
-    secret = "First-password-123!",
-    updated = "Changed-password-456!";
+    secret = "Ab1!xy",
+    updated = "Cd2!uv789";
   await page.setViewportSize({ width: 393, height: 851 });
   await page.goto("/login.html");
   await page.locator("#registrationToggle").click();
   await page.locator("[name=registrationName]").fill("พนักงานสมัครใหม่");
+  await page.locator("[name=staffID]").fill("test-manager");
+  await page.locator("[name=password]").fill("Wrong!7");
+  await page.locator("[name=confirmPassword]").fill("Wrong!7");
+  await page.locator("#loginForm button").click();
+  await expect(page.locator("#message")).toContainText("มีบัญชีอยู่แล้ว");
   await page.locator("[name=staffID]").fill(staffID);
+  for (const invalid of ["Ab1!x", "Cd2!uv7890"]) {
+    await page.locator("[name=password]").fill(invalid);
+    await page.locator("[name=confirmPassword]").fill(invalid);
+    await page.locator("#loginForm button").click();
+    await expect(page.locator("#message")).toContainText("6–9 ตัว");
+  }
   await page.locator("[name=password]").fill(secret);
   await page.locator("[name=confirmPassword]").fill(secret);
   await capture(page, {

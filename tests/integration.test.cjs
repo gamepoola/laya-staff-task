@@ -489,13 +489,13 @@ test("registration cannot elevate existing identities and password reset require
   await assert.rejects(() =>
     staff("resetStaffPassword", {
       id: "test-manager",
-      password: "malicious-password",
+      password: "Fake123!",
     }),
   );
   await assert.rejects(() =>
     mgr("resetStaffPassword", {
       id: "test-manager",
-      password: "malicious-password",
+      password: "Fake123!",
     }),
   );
   const before = (await getFirestore().doc("staff/test-staff").get()).data();
