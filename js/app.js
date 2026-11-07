@@ -11,6 +11,7 @@ import {
 import {
   api,
   auth,
+  ready,
   currentUser,
   login,
   register,
@@ -1312,6 +1313,7 @@ async function boot() {
     return;
   }
   if (page === "login") {
+    await ready;
     $("environment").textContent =
       window.LAYA_CONFIG.environment === "emulator"
         ? t(
@@ -1394,6 +1396,13 @@ async function boot() {
         btn.disabled = false;
       }
     });
+    const form = $("loginForm");
+    form.inert = false;
+    form.elements.staffID.disabled = false;
+    form.elements.password.disabled = false;
+    form.querySelector('button[type="submit"]').disabled = false;
+    $("registrationToggle").disabled = false;
+    message("");
     return;
   }
   const user = await currentUser();

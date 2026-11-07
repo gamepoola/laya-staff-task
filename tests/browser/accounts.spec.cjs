@@ -7,6 +7,18 @@ test.beforeAll(async () => {
   guard();
   ({ password } = await seed());
 });
+test("login shows a setup message if the app script fails to load", async ({
+  page,
+}) => {
+  await page.route("**/js/bundle.js", (route) =>
+    route.fulfill({ status: 404 }),
+  );
+  await page.goto("/login.html");
+  await expect(page.locator("#message")).toContainText("กำลังโหลดระบบ");
+  await expect(page.locator("#registrationToggle")).toBeDisabled();
+  await expect(page.locator("#loginForm button")).toBeDisabled();
+  await expect(page.locator("#loginForm")).toHaveAttribute("method", "post");
+});
 test("staff registration, manager activation, reset and suspended access", async ({
   page,
 }) => {
