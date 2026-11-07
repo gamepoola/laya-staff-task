@@ -649,7 +649,10 @@ function renderManager() {
   ]);
   selectOptions(
     $("employeeFilter"),
-    manager.staff.map((p) => [p.id, `${p.name} (${p.staffID})`]),
+    manager.staff.map((p) => [
+      p.id,
+      `${p.name} (${p.staffID})${p.accountState === "deleted" ? t(" · บัญชีเดิม", " · Archived account") : ""}`,
+    ]),
     [["", t("ทุกคน", "All employees")]],
   );
   selectOptions(
@@ -743,18 +746,30 @@ function renderManager() {
     $("taskList").append(el);
   }
   $("staffList").replaceChildren();
-  for (const p of [...manager.staff].sort(
-    (a, b) => (b.points || 0) - (a.points || 0),
-  )) {
+  for (const p of manager.staff
+    .filter((p) => p.accountState !== "deleted")
+    .sort((a, b) => (b.points || 0) - (a.points || 0))) {
     const el = document.createElement("article");
     el.className = "task";
-    el.innerHTML = `<div class="task-icon">${Number(p.points) || 0}</div><div><h3>${esc(p.name)}</h3><div class="small">${esc(p.staffID)} · ${esc(p.department)} · ${esc(p.outlet)} · ${esc(p.shift)} ${p.active === false ? (p.registrationPending ? t("รอเปิดสิทธิ์", "Awaiting activation") : t("ปิดสิทธิ์", "Inactive")) : t("เปิดสิทธิ์แล้ว", "Active")}</div></div>${p.role !== "manager" ? `<button class="secondary">${t("แก้ไข", "Edit")}</button>` : ""}`;
+    const state =
+      p.accountState === "deleting"
+        ? t("ลบบัญชียังไม่เสร็จ", "Deletion incomplete")
+        : p.active !== false
+          ? t("เปิดสิทธิ์แล้ว", "Active")
+          : p.registrationPending
+            ? t("รอเปิดสิทธิ์", "Awaiting activation")
+            : t("ปิดสิทธิ์", "Inactive");
+    el.innerHTML = `<div class="task-icon">${Number(p.points) || 0}</div><div><h3>${esc(p.name)}</h3><div class="small">${esc(p.staffID)} · ${esc(p.department)} · ${esc(p.outlet)} · ${esc(p.shift)} ${esc(state)}</div></div>${p.role !== "manager" ? `<button class="secondary">${t("แก้ไข", "Edit")}</button>` : ""}`;
     el.querySelector("button")?.addEventListener("click", () => {
-      fillForm($("staffForm"), p);
-      $("staffForm").elements.staffID.disabled = true;
-      $("staffForm").elements.password.disabled = false;
-      $("resetStaffPassword").hidden = false;
-      $("staffForm").scrollIntoView({ behavior: "smooth" });
+      const form = $("staffForm");
+      fillForm(form, p);
+      form.elements.staffID.disabled = true;
+      form.elements.password.disabled = p.accountState === "deleting";
+      form.querySelector('button[type="submit"]').disabled =
+        p.accountState === "deleting";
+      $("resetStaffPassword").hidden = p.accountState === "deleting";
+      $("deleteStaffAccount").hidden = p.role !== "staff";
+      form.scrollIntoView({ behavior: "smooth" });
     });
     $("staffList").append(el);
   }
@@ -1002,11 +1017,50 @@ async function setupManager() {
     f.elements.password.value = "";
     toast(t("ตั้งรหัสผ่านใหม่แล้ว", "Password reset"));
   });
+  listen("deleteStaffAccount", "click", async () => {
+    const form = $("staffForm");
+    const staff = manager.staff.find((p) => p.id === form.elements.id.value);
+    if (!staff || staff.role !== "staff" || staff.accountState === "deleted")
+      return;
+    const staffID = String(staff.staffID || staff.id).trim();
+    const confirmed = await ask(
+      t(
+        `ลบบัญชี ${staff.name} (${staffID})?`,
+        `Delete ${staff.name}'s account (${staffID})?`,
+      ),
+      {
+        detail: t(
+          "รหัสผ่านเดิมจะใช้ไม่ได้ พนักงานสมัครใหม่ด้วยรหัสพนักงานเดิมได้ ประวัติงานและรูปเดิมยังอยู่ในบัญชีเก่าและจะไม่ย้ายไปบัญชีใหม่",
+          "The old password will stop working. The employee can register again with the same staff ID. Existing work and photos stay with the old account.",
+        ),
+        confirmLabel: t("ยืนยันลบบัญชี", "Delete account"),
+        danger: true,
+      },
+    );
+    if (!confirmed) return;
+    try {
+      await api("deleteStaffAccount", { id: staff.id, staffID });
+    } catch (error) {
+      form.reset();
+      await loadManager().catch(() => {});
+      throw error;
+    }
+    form.reset();
+    await loadManager();
+    toast(
+      t(
+        "ลบบัญชีแล้ว พนักงานสมัครใหม่ได้",
+        "Account deleted. The employee can register again.",
+      ),
+    );
+  });
   $("staffForm").addEventListener("reset", () => {
     if ($("staffForm").dataset.filling === "true") return;
     setTimeout(() => {
       $("staffForm").elements.id.value = "";
       $("resetStaffPassword").hidden = true;
+      $("deleteStaffAccount").hidden = true;
+      $("staffForm").querySelector('button[type="submit"]').disabled = false;
       $("staffForm").elements.staffID.disabled = false;
       $("staffForm").elements.password.disabled = false;
     }, 0);

@@ -547,3 +547,62 @@ test("new signup ignores forged privileges and remains inaccessible until approv
     (e) => e.code === "functions/invalid-argument",
   );
 });
+
+test("only managers can delete a staff login and old work stays reviewable", async () => {
+  const manager = await client("test-manager"),
+    staff = await client("test-staff");
+  const staffID = "delete-staff-" + Date.now();
+  const { id } = await manager("createStaff", {
+    staffID,
+    name: "Synthetic staff",
+    password: "Ab1!xy",
+  });
+  const db = getFirestore();
+  const submission = db.collection("submissions").doc();
+  await submission.set({
+    staffUid: id,
+    taskId: "task1",
+    date: D.day(),
+    status: "waiting",
+  });
+  await assert.rejects(
+    () => staff("deleteStaffAccount", { id, staffID }),
+    (e) => e.code === "functions/permission-denied",
+  );
+  await assert.rejects(
+    () =>
+      manager("deleteStaffAccount", {
+        id: "test-manager",
+        staffID: "test-manager",
+      }),
+    (e) => e.code === "functions/permission-denied",
+  );
+  await assert.rejects(
+    () => manager("deleteStaffAccount", { id, staffID: "wrong-id" }),
+    (e) => e.code === "functions/failed-precondition",
+  );
+  await adminAuth().getUser(id);
+  await manager("deleteStaffAccount", { id, staffID });
+  await manager("deleteStaffAccount", { id, staffID });
+  await assert.rejects(
+    () => adminAuth().getUser(id),
+    (e) => e.code === "auth/user-not-found",
+  );
+  const profile = (await db.doc("staff/" + id).get()).data();
+  assert.equal(profile.active, false);
+  assert.equal(profile.accountState, "deleted");
+  await assert.rejects(
+    () => manager("saveStaff", { id, name: "Synthetic staff", active: true }),
+    (e) => e.code === "functions/failed-precondition",
+  );
+  const report = await manager("managerData");
+  assert.ok(report.submissions.some((s) => s.id === submission.id));
+  await manager("reviewSubmission", { id: submission.id, status: "approved" });
+  assert.equal((await submission.get()).data().status, "approved");
+  const replacement = await manager("createStaff", {
+    staffID,
+    name: "Replacement",
+    password: "Xy1!ab",
+  });
+  assert.notEqual(replacement.id, id);
+});

@@ -251,7 +251,12 @@ export function searchList(id, t) {
 }
 export function ask(
   message,
-  { text = false, detail = "", confirmLabel = "ยืนยัน / Confirm" } = {},
+  {
+    text = false,
+    detail = "",
+    confirmLabel = "ยืนยัน / Confirm",
+    danger = false,
+  } = {},
 ) {
   return new Promise((resolve) => {
     const dlg = document.createElement("dialog");
@@ -259,6 +264,7 @@ export function ask(
     dlg.setAttribute("aria-labelledby", "decision-title");
     dlg.innerHTML = `${icon(text ? "check" : "award")}<h2 id="decision-title"></h2><p class="decision-context">${esc(detail)}</p>${text ? '<label>เหตุผลและสิ่งที่ต้องแก้ไข / Guidance<textarea maxlength="1000" required aria-describedby="decision-error" placeholder="ระบุจุดที่ต้องแก้ไขให้พนักงานทราบ"></textarea></label><p id="decision-error" role="alert"></p>' : ""}<div class="actions"><button class="secondary" data-cancel>ยกเลิก / Cancel</button><button data-ok>${esc(confirmLabel)}</button></div>`;
     dlg.querySelector("h2").textContent = message;
+    if (danger) dlg.querySelector("[data-ok]").classList.add("danger");
     document.body.append(dlg);
     const finish = (value) => {
       dlg.close();

@@ -390,6 +390,7 @@ exports.managerData = callable(async (req) => {
   const staff = rawStaff.map((s) => ({
       ...D.publicProfile(s),
       registrationPending: s.registrationPending === true,
+      accountState: s.accountState,
       id: s.id,
     })),
     f = req.data || {};
@@ -513,6 +514,8 @@ exports.saveStaff = callable(async (req) => {
         "permission-denied",
         "Manager accounts require administrator provisioning",
       );
+    if (staff.data().accountState)
+      fail("failed-precondition", "Staff account is being deleted or archived");
     tx.update(staff.ref, {
       ...fields,
       ...(fields.active ? { registrationPending: false } : {}),
@@ -570,6 +573,8 @@ exports.resetStaffPassword = callable(async (req) => {
   const target = await db.doc("staff/" + uid).get();
   if (!target.exists || target.data().role !== "staff")
     fail("permission-denied", "Only staff passwords can be reset");
+  if (target.data().accountState)
+    fail("failed-precondition", "Staff account is being deleted or archived");
   await adminAuth().updateUser(uid, { password });
   await adminAuth().revokeRefreshTokens(uid);
   await db.collection("auditLogs").add({
@@ -577,6 +582,55 @@ exports.resetStaffPassword = callable(async (req) => {
     action: "staff.passwordReset",
     target: uid,
     at: stamp(),
+  });
+  return { ok: true };
+});
+exports.deleteStaffAccount = callable(async (req) => {
+  const manager = await actor(req, true);
+  const uid = id(req.data?.id);
+  const confirmation = str(req.data?.staffID, 160, true);
+  const ref = db.doc("staff/" + uid);
+
+  const shouldDelete = await db.runTransaction(async (tx) => {
+    const [requester, target] = await Promise.all([
+      tx.get(db.doc("staff/" + manager.uid)),
+      tx.get(ref),
+    ]);
+    transactionActor(requester, true);
+    const staff = target.data();
+    if (!staff || staff.role !== "staff" || uid === manager.uid)
+      fail("permission-denied", "Only staff accounts can be deleted");
+    if (confirmation !== String(staff.staffID || uid).trim())
+      fail("failed-precondition", "Staff ID changed; reload before deleting");
+    if (staff.accountState === "deleted") return false;
+    if (staff.accountState !== "deleting") {
+      tx.update(ref, { active: false, accountState: "deleting" });
+      audit(tx, manager.uid, "staff.delete.start", uid);
+    }
+    return true;
+  });
+  if (!shouldDelete) return { ok: true };
+
+  try {
+    await adminAuth().deleteUser(uid);
+  } catch (error) {
+    if (error.code !== "auth/user-not-found")
+      fail(
+        "unavailable",
+        "Account deletion incomplete; retry from the staff list",
+      );
+  }
+
+  // Keep the inactive profile so old submissions remain visible and reviewable.
+  await db.runTransaction(async (tx) => {
+    const snapshot = await tx.get(ref);
+    if (snapshot.data()?.accountState !== "deleting") return;
+    tx.update(ref, {
+      accountState: "deleted",
+      registrationPending: false,
+      accountDeletedAt: stamp(),
+    });
+    audit(tx, manager.uid, "staff.delete.complete", uid);
   });
   return { ok: true };
 });

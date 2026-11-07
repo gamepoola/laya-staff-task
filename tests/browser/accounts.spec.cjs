@@ -99,4 +99,35 @@ test("staff registration, manager activation, reset and suspended access", async
   await page.waitForURL("**/login.html");
   await login(staffID, updated);
   await expect(page.locator("#message")).toContainText("ไม่มีสิทธิ์");
+
+  await login("test-manager", password);
+  await page.waitForURL("**/manager.html");
+  await page.locator("[data-tab=manageStaff]").click();
+  await row.getByRole("button").click();
+  const remove = page.locator("#deleteStaffAccount");
+  await remove.click();
+  const confirmation = page.getByRole("dialog");
+  await expect(confirmation).toContainText(staffID);
+  await confirmation.locator("[data-cancel]").click();
+  await expect(row).toBeVisible();
+  await remove.click();
+  await confirmation.getByRole("button", { name: "ยืนยันลบบัญชี" }).click();
+  await expect(row).toHaveCount(0);
+  await expect(
+    page.getByRole("status").filter({ hasText: "ลบบัญชีแล้ว" }),
+  ).toBeVisible();
+  await page.locator("#logout").click();
+  await page.waitForURL("**/login.html");
+  await login(staffID, updated);
+  await expect(page.locator("#message")).not.toBeEmpty();
+
+  await page.locator("#registrationToggle").click();
+  await page
+    .locator("[name=registrationName]")
+    .fill("พนักงานสมัครใหม่อีกครั้ง");
+  await page.locator("[name=staffID]").fill(staffID);
+  await page.locator("[name=password]").fill(secret);
+  await page.locator("[name=confirmPassword]").fill(secret);
+  await page.locator("#loginForm button").click();
+  await expect(page.locator("#message")).toContainText("สมัครแล้ว");
 });
